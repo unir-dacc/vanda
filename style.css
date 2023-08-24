@@ -9,13 +9,17 @@
 .site-header {
 	background-color: #e0e4e7;
 	color: #fff;
-	padding: 0 10%;
 }
 
 .site-header nav {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
+	padding: 0 10%;
+}
+
+.site-header nav img {
+	width: min(300px, 30vw);
 }
 
 .site-header ul {
@@ -29,11 +33,11 @@
 .site-header nav a {
 	text-decoration: none;
 	color: #000;
-	font-size: min(28px, 3vw);
+	font-size: min(2em, 30px);
 }
 
 .search-container {
-	padding: 10vw;
+	padding: 10%;
 	display: flex;
 	justify-content: center;
 }
@@ -69,10 +73,10 @@ input[type="text"]:focus {
 }
 
 .filter-and-table-container {
-	padding: 0 10vw;
+	padding: 0 10%;
 	display: flex;
 	justify-content: center;
-	align-items; center;
+	align-items: center;
 }
 
 .filter-list {
@@ -93,7 +97,9 @@ input[type="text"]:focus {
 	align-text: center;
 }
 
-#main-table, th, td {
+#main-table,
+th,
+td {
 	text-align: left;
 	border: 1px, solid;
 }
