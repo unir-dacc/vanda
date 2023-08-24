@@ -9,7 +9,6 @@ mkShell {
 		python311
 		pipenv
 		nodePackages.prettier
-		nodePackages.stylelint
 	];
 
 # Bash statements that are executed by nix-shell.
