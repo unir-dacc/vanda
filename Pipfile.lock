@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "ca3813b263c50c9f4b0e2693098ab478b219ced7507a11e2df0388485e25b7cb"
+            "sha256": "0276b9a5ccb8e62f72cd973ae6dcc17f36df74853de50cbc24ebda8f70751b65"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -15,7 +15,32 @@
             }
         ]
     },
-    "default": {},
+    "default": {
+        "asgiref": {
+            "hashes": [
+                "sha256:89b2ef2247e3b562a16eef663bc0e2e703ec6468e2fa8a5cd61cd449786d4f6e",
+                "sha256:9e0ce3aa93a819ba5b45120216b23878cf6e8525eb3848653452b4192b92afed"
+            ],
+            "markers": "python_version >= '3.7'",
+            "version": "==3.7.2"
+        },
+        "django": {
+            "hashes": [
+                "sha256:7e4225ec065e0f354ccf7349a22d209de09cc1c074832be9eb84c51c1799c432",
+                "sha256:860ae6a138a238fc4f22c99b52f3ead982bb4b1aad8c0122bcd8c8a3a02e409d"
+            ],
+            "index": "pypi",
+            "version": "==4.2.4"
+        },
+        "sqlparse": {
+            "hashes": [
+                "sha256:5430a4fe2ac7d0f93e66f1efc6e1338a41884b7ddf2a350cedd20ccc4d9d28f3",
+                "sha256:d446183e84b8349fa3061f0fe7f06ca94ba65b426946ffebe6e3e8295332420c"
+            ],
+            "markers": "python_version >= '3.5'",
+            "version": "==0.4.4"
+        }
+    },
     "develop": {
         "astroid": {
             "hashes": [
@@ -117,11 +142,11 @@
         },
         "pyright": {
             "hashes": [
-                "sha256:23ce9eca401fda311be273784ebf128850d43a17f9e87dc299ffcdc0ffe91f75",
-                "sha256:f3029bfe96a3436a505464d28e3433fafe23ac5f86f52edab9a26cd66685825e"
+                "sha256:0c48e3bca3d081bba0dddd0c1f075aaa965c59bba691f7b9bd9d73a98e44e0cf",
+                "sha256:0edb712afbbad474e347de12ca1bd9368aa85d3365a1c7b795012e48e6a65111"
             ],
             "index": "pypi",
-            "version": "==1.1.323"
+            "version": "==1.1.324"
         },
         "setuptools": {
             "hashes": [
