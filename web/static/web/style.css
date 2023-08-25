@@ -98,8 +98,12 @@ input[type="text"]:focus {
 }
 
 #main-table,
-th,
 td {
-	text-align: left;
+	text-align: center;
 	border: 1px, solid;
+}
+
+#main-table,
+th {
+	font-size: 25px;
 }
