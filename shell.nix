@@ -13,6 +13,6 @@ mkShell {
 
 # Bash statements that are executed by nix-shell.
 	shellHook = ''
-		fish -C "source $HOME/.local/share/virtualenvs/dbNGEN-vrAsR5f0/bin/activate.fish"
+		fish -C "pipenv shell"
 		'';
 }
