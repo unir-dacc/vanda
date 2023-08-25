@@ -1,9 +1,10 @@
+{% load static %}
 <!doctype html>
 <html lang="en">
 	<head>
 		<title>dbNGEN</title>
 		<meta charset="UTF-8" />
-		<link href="style.css" rel="stylesheet" />
+		<link href="{% static 'web/style.css' %}" rel="stylesheet" />
 		<link
 			rel="icon"
 			href="https://dacc.unir.br/img/favicon.ico"
@@ -24,7 +25,7 @@
 		<header class="site-header">
 			<nav>
 				<a href="https://www.unir.br/homepage"
-					><img src="./logo_unir.png" alt="logo da unir"
+					><img src="{% static 'web/logo_unir.png' %}" alt="logo da unir"
 				/></a>
 				<ul>
 					<li><a href="#">Sobre</a></li>
@@ -38,8 +39,9 @@
 		</header>
 		<main>
 			<div class="search-container">
-				<form class="search-form" action="action_page.php">
+				<form class="search-form" action="" method="GET">
 					<input
+						name="q"
 						type="text"
 						class="search-input"
 						placeholder="rs12345, beta carotene, TP53, regex..."
@@ -58,46 +60,34 @@
 						<li><input type="checkbox" /> etc...</li>
 					</ul>
 				</div>
+				{% if search_list %}
 				<table id="main-table">
 					<tr>
-						<th>Company</th>
-						<th>Contact</th>
-						<th>Country</th>
-						<th>Country</th>
-						<th>Country</th>
+						<th>SNP</th>
+						<th>asdf</th>
+						<th>asdf</th>
+						<th>asdf</th>
+						<th>asdf</th>
 					</tr>
+					{% for item in search_list %}
 					<tr>
-						<td>Alfreds Futterkiste</td>
-						<td>Maria Anders</td>
-						<td>Germany</td>
+						<td>
+							<a
+								target="_blank"
+								href="https://www.ncbi.nlm.nih.gov/snp/{{ item.0 }}"
+								>{{ item.0 }}</a
+							>
+						</td>
+						<td>{{ item.1 }}</td>
+						<td>{{ item.2 }}</td>
+						<td>{{ item.3 }}</td>
+						<td>{{ item.4 }}</td>
 					</tr>
-					<tr>
-						<td>Centro comercial Moctezuma</td>
-						<td>Francisco Chang</td>
-						<td>Mexico</td>
-					</tr>
-					<tr>
-						<td>Alfreds Futterkiste</td>
-						<td>Maria Anders</td>
-						<td>Germany</td>
-					</tr>
-					<tr>
-						<td>Centro comercial Moctezuma</td>
-						<td>Francisco Chang</td>
-						<td>Mexico</td>
-					</tr>
-					<tr>
-						<td>Alfreds Futterkiste</td>
-						<td>Maria Anders</td>
-						<td>Germany</td>
-					</tr>
-					<tr>
-						<td>Centro comercial Moctezuma</td>
-						<td>Francisco Chang</td>
-						<td>Mexico</td>
-					</tr>
-					<td>asdfasdf</td>
+					{% endfor %}
 				</table>
+				{% else %}
+				<p>0 SNP found</p>
+				{% endif %}
 			</div>
 		</main>
 	</body>
