@@ -60,7 +60,7 @@
 						<li><input type="checkbox" /> etc...</li>
 					</ul>
 				</div>
-				{% if search_list %}
+				{% if list_response %}
 				<table id="main-table">
 					<tr>
 						<th>SNP</th>
@@ -68,7 +68,7 @@
 						<th>Alelles</th>
 						<th>Gene Consequence</th>
 					</tr>
-					{% for item in search_list %}
+					{% for item in list_response %}
 					<tr>
 						<td>
 							<a
