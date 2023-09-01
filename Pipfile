@@ -10,6 +10,7 @@ requests = "*"
 [dev-packages]
 pyright = "*"
 pylint = "*"
+djhtml = "*"
 
 [requires]
 python_version = "3.11"

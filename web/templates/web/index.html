@@ -1,92 +1,92 @@
 {% load static %}
 <!doctype html>
 <html lang="en">
-	<head>
-		<title>dbNGEN</title>
-		<meta charset="UTF-8" />
-		<link href="{% static 'web/style.css' %}" rel="stylesheet" />
-		<link
-			rel="icon"
-			href="https://dacc.unir.br/img/favicon.ico"
-			type="image/x-icon"
-		/>
-		<link rel="preconnect" href="https://fonts.googleapis.com" />
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-		<link
-			href="https://fonts.googleapis.com/css2?family=Roboto&display=swap"
-			rel="stylesheet"
-		/>
-		<link
-			rel="stylesheet"
-			href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
-		/>
-	</head>
-	<body>
-		<header class="site-header">
-			<nav>
-				<a href="https://www.unir.br/homepage"
-					><img src="{% static 'web/logo_unir.png' %}" alt="logo da unir"
-				/></a>
-				<ul>
-					<li><a href="#">Sobre</a></li>
-					<li>
-						<a href="https://github.com/riccardoalv/dbNGEN" target="_blank"
-							>Github <i class="fa fa-github"></i
-						></a>
-					</li>
-				</ul>
-			</nav>
-		</header>
-		<main>
-			<div class="search-container">
-				<form class="search-form" action="" method="GET">
-					<input
-						name="q"
-						type="text"
-						class="search-input"
-						placeholder="rs12345, beta carotene, TP53, regex..."
-					/>
-					<button type="submit" class="search-button">
-						<i class="fa fa-search"></i>
-					</button>
-				</form>
-			</div>
-			<div class="filter-and-table-container">
-				<div class="filter-list">
-					<ul>
-						<li><input type="checkbox" /> Genes</li>
-						<li><input type="checkbox" /> Proteinas</li>
-						<li><input type="checkbox" /> SNP</li>
-						<li><input type="checkbox" /> etc...</li>
-					</ul>
-				</div>
-				{% if list_response %}
-				<table id="main-table">
-					<tr>
-						<th>SNP</th>
-						<th>Position</th>
-						<th>Alelles</th>
-						<th>Gene Consequence</th>
-					</tr>
-					{% for item in list_response %}
-					<tr>
-						<td>
-							<a
-								target="_blank"
-								href="https://www.ncbi.nlm.nih.gov/snp/{{ item.0 }}"
-								>{{ item.0 }}</a
-							>
-						</td>
-						<td>{{ item.2 }}</td>
-						<td>{{ item.3 }}</td>
-						<td>{{ item.4 }}</td>
-					</tr>
-					{% endfor %}
-				</table>
-				{% else %}
-				<p>0 SNP found</p>
-				{% endif %}
-			</div>
-		</main>
-	</body>
-</html>
+    <head>
+        <title>dbNGEN</title>
+        <meta charset="UTF-8" />
+        <link href="{% static 'web/style.css' %}" rel="stylesheet" />
+        <link
+            rel="icon"
+            href="https://dacc.unir.br/img/favicon.ico"
+            type="image/x-icon"
+        />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Roboto&display=swap"
+            rel="stylesheet"
+        />
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
+        />
+    </head>
+    <body>
+        <header class="site-header">
+            <nav>
+                <a href="https://www.unir.br/homepage"
+                ><img src="{% static 'web/logo_unir.png' %}" alt="logo da unir"
+                    /></a>
+                <ul>
+                    <li><a href="#">Sobre</a></li>
+                    <li>
+                        <a href="https://github.com/riccardoalv/dbNGEN" target="_blank"
+                        >Github <i class="fa fa-github"></i
+                            ></a>
+                        </li>
+                    </ul>
+                </nav>
+            </header>
+            <main>
+                <div class="search-container">
+                    <form class="search-form" action="" method="GET">
+                        <input
+                            name="q"
+                            type="text"
+                            class="search-input"
+                            placeholder="rs12345, beta carotene, TP53, regex..."
+                        />
+                        <button type="submit" class="search-button">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </form>
+                </div>
+                <div class="filter-and-table-container">
+                    {% if list_response %}
+                        <div class="filter-list">
+                            <ul>
+                                <li><input type="checkbox" /> Genes</li>
+                                <li><input type="checkbox" /> Proteinas</li>
+                                <li><input type="checkbox" /> SNP</li>
+                                <li><input type="checkbox" /> etc...</li>
+                            </ul>
+                        </div>
+                        <table id="main-table">
+                            <tr>
+                                <th>SNP</th>
+                                <th>Position</th>
+                                <th>Alelles</th>
+                                <th>Gene Consequence</th>
+                            </tr>
+                            {% for item in list_response %}
+                                <tr>
+                                    <td>
+                                        <a
+                                            target="_blank"
+                                            href="https://www.ncbi.nlm.nih.gov/snp/{{ item.0 }}"
+                                        >{{ item.0 }}</a
+                                            >
+                                        </td>
+                                        <td>{{ item.2 }}</td>
+                                        <td>{{ item.3 }}</td>
+                                        <td>{{ item.4 }}</td>
+                                    </tr>
+                            {% endfor %}
+                        </table>
+                    {% else %}
+                        <p>0 SNP found</p>
+                    {% endif %}
+                </div>
+            </main>
+        </body>
+    </html>
