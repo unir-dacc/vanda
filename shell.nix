@@ -13,6 +13,6 @@ mkShell {
 
 # Bash statements that are executed by nix-shell.
 	shellHook = ''
-		fish -C "pipenv shell"
+		pipenv shell
 		'';
 }
