@@ -6,12 +6,15 @@ name = "pypi"
 [packages]
 django = "*"
 requests = "*"
+redis = "*"
+hiredis = "*"
 
 [dev-packages]
 pyright = "*"
 pylint = "*"
 djhtml = "*"
 autopep8 = "*"
+ipython = "*"
 
 [requires]
 python_version = "3.11"

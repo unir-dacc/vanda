@@ -1,0 +1,21 @@
+version: "2"
+
+services:
+  web:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    ports:
+      - "8000:8000"
+    expose:
+      - 8000
+    environment:
+      DEBUG: "True"
+      CELERY_BROKER_URL: "redis://redis:6379/0"
+      CELERY_RESULT_BACKEND: "redis://redis:6379/0"
+  redis:
+    restart: unless-stopped
+    image: redis:7.2
+    expose:
+      - 6379
