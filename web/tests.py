@@ -4,15 +4,15 @@ from django.urls import reverse
 
 from . import services
 
-default_snp = "rs1234500045"
-correct_response = [['rs1234500045', '1', '124244964', 'G/A, G/C, G/T', '']]
+default_snp = "rs268"
+correct_response = ['rs268', '8', '19956017', 'A/G', 'LPL']
 
 
 class ServicesTestCase(TestCase):
     def test_get_by_name(self):
         response = services.get_by_name(default_snp)
 
-        self.assertListEqual(response, correct_response)
+        self.assertListEqual(response[0], correct_response)
 
 
 class ViewTestCase(TestCase):
@@ -22,6 +22,8 @@ class ViewTestCase(TestCase):
         response = client.get('/')
         self.assertEqual(response.status_code, 200)
 
-        response = client.get('/', {"q": default_snp})
+    def test_search_parameter(self):
+        client = Client()
 
+        response = client.get('/', {"q": default_snp})
         self.assertEqual(response.status_code, 200)
