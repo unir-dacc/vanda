@@ -1,5 +1,5 @@
 run:
-	python3 manage.py runserver
+	DJANGO_SETTINGS_MODULE=dbNGEN.settings_dev python3 manage.py runserver
 docker:
 	docker-compose up
 format:
