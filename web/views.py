@@ -8,6 +8,6 @@ def index(request):
     response = []
 
     if query is not None:
-        response = services.get_by_name(query)
+        response = services.search_snp(query)
 
     return render(request, 'web/index.html', {"list_response": response})

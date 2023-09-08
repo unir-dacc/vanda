@@ -10,7 +10,7 @@ correct_response = ['rs268', '8', '19956017', 'A/G', 'LPL']
 
 class ServicesTestCase(TestCase):
     def test_get_by_name(self):
-        response = services.get_by_name(default_snp)
+        response = services.search_snp(default_snp)
 
         self.assertListEqual(response[0], correct_response)
 
