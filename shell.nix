@@ -15,4 +15,5 @@ mkShell {
 	shellHook = ''
 		pipenv shell
 		'';
+    DJANGO_SETTINGS_MODULE="dbNGEN.settings_dev";
 }

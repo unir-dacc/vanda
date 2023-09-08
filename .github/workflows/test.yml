@@ -19,5 +19,4 @@ jobs:
           PIPENV_VENV_IN_PROJECT=1 pipenv install --deploy
       - name: Test
         run: |
-          mv dbNGEN/settings-dev.py dbNGEN/settings.py
-          .venv/bin/python3 manage.py test
+          $DJANGO_SETTINGS_MODULE=dbNGEN.settings_dev .venv/bin/python3 manage.py test
