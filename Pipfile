@@ -16,5 +16,8 @@ djhtml = "*"
 autopep8 = "*"
 ipython = "*"
 
+[scripts]
+format = "djhtml . && autopep8 --in-place --aggressive --aggressive -r ."
+
 [requires]
 python_version = "3.11"
