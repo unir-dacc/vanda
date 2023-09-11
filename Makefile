@@ -4,3 +4,5 @@ docker:
 	docker-compose up
 format:
 	djhtml . && autopep8 --in-place --aggressive --aggressive -r .
+test:
+	python3 manage.py test

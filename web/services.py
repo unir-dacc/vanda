@@ -1,5 +1,6 @@
 import requests
 import logging
+from django.core.cache import cache
 
 
 def search_snp(query):
@@ -16,21 +17,32 @@ def search_snp(query):
     return r[3]
 
 
-def get_snp_hgvs(snpid):
-    url = f"https://api.ncbi.nlm.nih.gov/variation/v0/refsnp/{snpid[2:]}"
+class SnpData:
+    def __init__(self, snpid):
+        self.snpid = snpid
 
-    response = requests.get(url)
+        url = f"https://api.ncbi.nlm.nih.gov/variation/v0/refsnp/{snpid[2:]}"
+        response = requests.get(url)
 
-    r = []
+        snp_data = cache.get(snpid, None)
 
-    if response.status_code == 200:
-        r = response.json()["primary_snapshot_data"]["placements_with_allele"]
-    else:
-        logging.error(f"Resonse code on get_snp_data: {response.status_code}")
+        if snp_data == None:
+            if response.status_code == 200:
+                snp_data = response.json()
+                cache.set(snpid, snp_data)
+            else:
+                logging.error(
+                    f"Resonse code on get_snp_data: {response.status_code}")
 
-    seq_id = []
+        self.data = snp_data
 
-    for hgvs in r:
-        seq_id.append(hgvs["seq_id"])
+    def get_snp_hgvs(self):
+        snp_data = self.data["primary_snapshot_data"]["placements_with_allele"]
 
-    return seq_id
+        hgvs = []
+
+        for item in snp_data:
+            for allele in item["alleles"]:
+                hgvs.append(allele["hgvs"])
+
+        return hgvs
