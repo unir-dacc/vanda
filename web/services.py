@@ -24,8 +24,13 @@ def get_snp_hgvs(snpid):
     r = []
 
     if response.status_code == 200:
-        r = response.json()
+        r = response.json()["primary_snapshot_data"]["placements_with_allele"]
     else:
         logging.error(f"Resonse code on get_snp_data: {response.status_code}")
 
-    return r["primary_snapshot_data"]["placements_with_allele"]
+    seq_id = []
+
+    for hgvs in r:
+        seq_id.append(hgvs["seq_id"])
+
+    return seq_id
