@@ -16,7 +16,7 @@ def index(request):
     return render(request, 'web/index.html', {"list_response": response})
 
 
-def snp_popover(request, snpid=None):
+def snp_hgvs(request, snpid=None):
     snp = services.SnpData(snpid)
 
     data = {'content': snp.get_snp_hgvs()}

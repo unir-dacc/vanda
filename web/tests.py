@@ -1,6 +1,7 @@
 from django.test import TestCase, Client
 from django.test.client import resolve
 from django.urls import reverse
+from time import sleep
 
 from . import services
 
@@ -20,9 +21,6 @@ hgvs_snp_response = ['NC_000008.11:g.19956018=',
                      'NP_000228.1:p.Asn318Ser']
 
 
-client = Client()
-
-
 snp = services.SnpData(default_snp)
 
 
@@ -40,13 +38,19 @@ class ServicesTestCase(TestCase):
 class ViewTestCase(TestCase):
 
     def test_homepage(self):
+        client = Client()
+
         response = client.get('/')
         self.assertEqual(response.status_code, 200)
 
     def test_search_parameter(self):
+        client = Client()
+
         response = client.get('/', {"q": default_snp})
         self.assertEqual(response.status_code, 200)
 
     def test_snp(self):
-        response = client.get('/snp/' + default_snp[2:])
+        client = Client()
+
+        response = client.get('/api/snp/' + default_snp + '/hgvs')
         self.assertEqual(response.status_code, 200)
