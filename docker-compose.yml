@@ -12,8 +12,14 @@ services:
       - 8000
     environment:
       DEBUG: "True"
+    depends_on:
+      - redis
+    environment:
+      - REDIS_HOST=redis
   redis:
     restart: unless-stopped
     image: redis:7.2
     expose:
       - 6379
+    ports:
+      - "6379:6379"
