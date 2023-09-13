@@ -57,6 +57,10 @@
                     }
                 });
             })
+            $('#modalCenter').on('hidden.bs.modal', function (e) {
+                $('.modalCenterTitle').html("")
+                $('.modal-body').html('<div class="spinner-border" role="status"> <span class="sr-only">Loading...</span> </div>')
+            })
         })
     </script>
     <body>
@@ -86,6 +90,9 @@
                                 </button>
                             </div>
                             <div class="modal-body">
+                                <div class="spinner-border" role="status">
+                                    <span class="sr-only">Loading...</span>
+                                </div>
                             </div>
                         </div>
                     </div>
