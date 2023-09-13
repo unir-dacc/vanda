@@ -32,23 +32,31 @@
         <!-- <script src="{% static 'web/script.js' %}"></script> -->
     </head>
     <script>
-        $('[data-toggle="tooltip"]').tooltip(function() {
-            html: true;
-            title: "america";
-        })
-        $(document).mouseover(function(e) {
-            var snp = $(e.target)[0].innerText
-            $.ajax({
-                url: '/snp/' + snp,
-                method: 'GET',
-                dataType: 'json',
-                success: function (data) {
-                    e.target.title = data.content
-                },
-                error: function () {
-                    e.target.title = 'Failed to fetch data.';
-                }
-            });
+
+        function printa(a) {
+            var s = ""
+            for(var i = 0; i < a.length; i++){
+                s += " " + a[i] + "<br>"
+            }
+            return s
+        }
+        $(document).ready(function() {
+            $('[data-target="#modalCenter"]').click(function() {
+                var button = $(this);
+                var snp = button[0].parentNode.parentNode.firstElementChild.innerText
+                $.ajax({
+                    url: 'api/snp/' + snp + '/hgvs',
+                    method: 'GET',
+                    dataType: 'json',
+                    success: function (data) {
+                        $('.modalCenterTitle').text(snp)
+                        $('.modal-body').html(printa(data.content));
+                    },
+                    error: function () {
+                        $('.modal-body').html('Failed to fetch data.');
+                    }
+                });
+            })
         })
     </script>
     <body>
@@ -68,6 +76,20 @@
                 </nav>
             </header>
             <main>
+                <div class="modal" id="modalCenter" tabindex="-1" role="dialog" aria-labelledby="modalCenterTitle" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h2 class="modalCenterTitle"></h2>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <div class="search-container">
                     <form class="search-form" action="" method="GET">
                         <input
@@ -105,6 +127,7 @@
                                         <td>{{ item.2 }}</td>
                                         <td>{{ item.3 }}</td>
                                         <td>{{ item.4 }}</td>
+                                        <td><a type="button" data-toggle="modal" data-target="#modalCenter"><i class="fa fa-solid fa-gear"></i></a></td>
                                     </tr>
                             {% endfor %}
                         </table>
