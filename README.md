@@ -18,9 +18,3 @@ make docker
 - Install dependencies `pipenv sync`
 - Run pipenv `pipenv shell`
 - Run `pre-commit install`
-
-## Format code
-
-```
-make format
-```
