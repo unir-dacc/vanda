@@ -14,6 +14,7 @@ pyright = "*"
 djhtml = "*"
 autopep8 = "*"
 ipython = "*"
+pre-commit = "*"
 
 [requires]
 python_version = "3.11"

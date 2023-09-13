@@ -25,7 +25,7 @@ class SnpData:
 
         snp_data = cache.get(snpid, None)
 
-        if snp_data == None:
+        if snp_data is None:
             response = requests.get(url)
 
             if response.status_code == 200:
