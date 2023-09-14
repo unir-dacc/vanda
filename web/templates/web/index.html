@@ -33,37 +33,37 @@
     </head>
     <script>
 
-          function setParam(name, value) {
-        var l = window.location;
+        function setParam(name, value) {
+            var l = window.location;
 
         /* build params */
-        var params = {};        
-        var x = /(?:\??)([^=&?]+)=?([^&?]*)/g;        
-        var s = l.search;
-        for(var r = x.exec(s); r; r = x.exec(s))
-        {
-            r[1] = decodeURIComponent(r[1]);
-            if (!r[2]) r[2] = '%%';
-            params[r[1]] = r[2];
-        }
+            var params = {};
+            var x = /(?:\??)([^=&?]+)=?([^&?]*)/g;
+            var s = l.search;
+            for(var r = x.exec(s); r; r = x.exec(s))
+            {
+                r[1] = decodeURIComponent(r[1]);
+                if (!r[2]) r[2] = '%%';
+                params[r[1]] = r[2];
+            }
 
         /* set param */
-        params[name] = encodeURIComponent(value);
+            params[name] = encodeURIComponent(value);
 
         /* build search */
-        var search = [];
-        for(var i in params)
-        {
-            var p = encodeURIComponent(i);
-            var v = params[i];
-            if (v != '%%') p += '=' + v;
-            search.push(p);
-        }
-        search = search.join('&');
+            var search = [];
+            for(var i in params)
+            {
+                var p = encodeURIComponent(i);
+                var v = params[i];
+                if (v != '%%') p += '=' + v;
+                search.push(p);
+            }
+            search = search.join('&');
 
         /* execute search */
-        l.search = search;
-    }
+            l.search = search;
+        }
         function printa(a) {
             var s = ""
             for(var i = 0; i < a.length; i++){
@@ -169,23 +169,23 @@
                                     </tr>
                             {% endfor %}
                         </table>
-                </div>
-                <nav>
-                  <ul class="pagination justify-content-center pagination-lg">
-                    {% if list_response.has_previous %}
-                    <li class="page-item"><a class="page-link" href="javascript:setParam('page', {{ list_response.previous_page_number }})">Previous</a></li>
-                    {% endif %}
-                    <li class="page-item"><a class="page-link" href="javascript:setParam('page', {{ list_response.number }})">{{list_response.number}}</a></li>
-                    {% if list_response.has_next %}
-                    <li class="page-item"><a class="page-link" href="javascript:setParam('page', {{list_response.next_page_number}})">Next</a></li>
-                    {% endif %}
-                  </ul>
-                </nav>
+                        </div>
+                        <nav>
+                            <ul class="pagination justify-content-center pagination-lg">
+                                {% if list_response.has_previous %}
+                                    <li class="page-item"><a class="page-link" href="javascript:setParam('page', {{ list_response.previous_page_number }})">Previous</a></li>
+                                {% endif %}
+                                <li class="page-item"><a class="page-link" href="javascript:setParam('page', {{ list_response.number }})">{{list_response.number}}</a></li>
+                                {% if list_response.has_next %}
+                                    <li class="page-item"><a class="page-link" href="javascript:setParam('page', {{list_response.next_page_number}})">Next</a></li>
+                                {% endif %}
+                            </ul>
+                        </nav>
                     {% else %}
-                <div class="filter-and-table-container">
-                        <p>0 SNP found</p>
+                        <div class="filter-and-table-container">
+                            <p>0 SNP found</p>
                         </div>
                     {% endif %}
-            </main>
-        </body>
-    </html>
+                </main>
+            </body>
+        </html>
