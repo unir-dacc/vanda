@@ -1,8 +1,12 @@
 from django.core.handlers.asgi import HttpRequest
 from django.shortcuts import render
 from django.http import JsonResponse
+from django.core.paginator import Paginator
+import logging
 
 from . import services
+
+PAGE_SIZE = 20
 
 
 def index(request):
@@ -13,7 +17,13 @@ def index(request):
     if query is not None:
         response = services.search_snp(query)
 
-    return render(request, 'web/index.html', {"list_response": response})
+    paginator = Paginator(response, PAGE_SIZE)
+
+    page_number = request.GET.get("page")
+    logging.info(page_number)
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'web/index.html', {"list_response": page_obj})
 
 
 def snp_hgvs(request, snpid=None):
