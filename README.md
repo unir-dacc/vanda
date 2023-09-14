@@ -15,6 +15,6 @@ make docker
 - Install python3.11 (use nix or pyenv)
 - Install docker and docker-compose
 - Install pipenv `pip install pipenv`
-- Install dependencies `pipenv sync`
+- Install dependencies `pipenv sync --dev`
 - Run pipenv `pipenv shell`
 - Run `pre-commit install`
