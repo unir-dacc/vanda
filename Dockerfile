@@ -9,9 +9,10 @@ RUN pip install pipenv
 # Install python dependencies in /.venv
 COPY Pipfile .
 COPY Pipfile.lock .
-RUN PIPENV_VENV_IN_PROJECT=1 pipenv install --deploy
+RUN pipenv requirements > requirements.txt
+RUN pip install -r requirements.txt
 
 COPY . .
 
-ENTRYPOINT [".venv/bin/python3"]
+ENTRYPOINT ["python3"]
 CMD ["manage.py", "runserver", "0.0.0.0:8000"]
