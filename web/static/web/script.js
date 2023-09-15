@@ -32,7 +32,11 @@ function setParam(name, value) {
 function printa(a) {
   var s = ""
   for(var i = 0; i < a.length; i++){
-    s += " " + a[i] + "<br>"
+    if (a[i].slice(0, 2) == "NP" && a[i].slice(0, 2) == "XP") {
+      s += '<a href="https://www.ncbi.nlm.nih.gov/protein/' + a[i].replace(/:.*/, "") + '">' + a[i] + '</a><br>'
+    } else {
+      s += '<a href="https://www.ncbi.nlm.nih.gov/nuccore/' + a[i].replace(/:.*/, "") + '">' + a[i] + '</a><br>'
+    }
   }
   return s
 }
