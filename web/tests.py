@@ -1,7 +1,6 @@
 from django.test import TestCase, Client
 from django.test.client import resolve
 from django.urls import reverse
-from time import sleep
 
 from . import services
 
