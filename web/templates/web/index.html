@@ -33,8 +33,7 @@
         <header class="site-header">
             <nav>
                 <a href="https://www.unir.br/homepage"
-                ><img src="{% static 'web/logo_unir.png' %}" alt="logo da unir"
-                    /></a>
+                ><img src="{% static 'web/logo_unir.png' %}" alt="logo da unir"/></a>
                 <ul>
                     <li><a href="#">Sobre</a></li>
                     <li>
@@ -45,6 +44,7 @@
                     </ul>
                 </nav>
             </header>
+
             <main>
                 <div class="modal" id="modalCenter" tabindex="-1" role="dialog" aria-labelledby="modalCenterTitle" aria-hidden="true">
                     <div class="modal-dialog modal-dialog-centered" role="document">
@@ -63,6 +63,7 @@
                         </div>
                     </div>
                 </div>
+
                 <div class="search-container">
                     <form class="search-form" action="" method="GET">
                         <input
@@ -76,17 +77,28 @@
                         </button>
                     </form>
                 </div>
+
                 <div class="filter-and-table-container">
                     {% if list_response %}
+
+                        <div class="filter-container">
+                            <nav>
+                                <input type="checkbox" name="checkbox" value="asdfasdf">
+                                <label for="proteina">Proteina</label>
+                            </nav>
+                        </div>
+
                         <table id="main-table" class="table table-striped">
                             <tr>
+                                <th>Nutriente</th>
                                 <th>SNP</th>
-                                <th>Position</th>
-                                <th>Alelles</th>
                                 <th>Gene Consequence</th>
+                                <th>Alelles</th>
+                                <th>Position</th>
                             </tr>
                             {% for item in list_response %}
-                                <tr>
+                                <tr class="clickable-row">
+                                    <td></td>
                                     <td>
                                         <a data-toggle="tooltip"
                                            data-html="true"
@@ -97,22 +109,21 @@
                                         >{{ item.0 }}</a
                                             >
                                         </td>
-                                        <td>{{ item.2 }}</td>
-                                        <td>{{ item.3 }}</td>
-                                        <td>{{ item.4 }}</td>
-                                        <td><a type="button" data-toggle="modal" data-target="#modalCenter"><i class="fa fa-solid fa-gear"></i></a></td>
+                                        <td>{{ item.4 }}</td> <!-- Gene Consequence -->
+                                        <td>{{ item.3 }}</td> <!-- Alelles -->
+                                        <td>{{ item.2 }}</td> <!-- Position -->
                                     </tr>
                             {% endfor %}
                         </table>
                         </div>
                         <nav>
-                            <ul class="pagination justify-content-center pagination-lg">
+                            <ul class="button-pagination">
                                 {% if list_response.has_previous %}
-                                    <li class="page-item"><a class="page-link" href="javascript:setParam('page', {{ list_response.previous_page_number }})">Previous</a></li>
+                                    <li class="arrow-page"><a  href="javascript:setParam('page', {{ list_response.previous_page_number }})"><i class="fa fa-angle-left"></i></a></li>
                                 {% endif %}
-                                <li class="page-item"><a class="page-link" href="javascript:setParam('page', {{ list_response.number }})">{{list_response.number}}</a></li>
+                                <li class="current-page"><a  href="javascript:setParam('page', {{ list_response.number }})">{{list_response.number}}</a></li>
                                 {% if list_response.has_next %}
-                                    <li class="page-item"><a class="page-link" href="javascript:setParam('page', {{list_response.next_page_number}})">Next</a></li>
+                                    <li class="arrow-page"><a  href="javascript:setParam('page', {{list_response.next_page_number}})"><i class="fa fa-angle-right"></i></a></li>
                                 {% endif %}
                             </ul>
                         </nav>

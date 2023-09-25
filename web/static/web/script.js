@@ -45,10 +45,10 @@ function printa(a, protein) {
   }
 
   $(document).ready(function() {
-    $('[data-target="#modalCenter"]').click(function() {
-      var button = $(this);
-      var snp = button[0].parentNode.parentNode.firstElementChild.innerText
-      var protein = button[0].parentNode.parentNode.lastElementChild.previousElementSibling.innerText
+    $(".clickable-row").click(function() {
+      var row = $(this);
+      var snp = row[0].children[1].innerText
+      var protein = row[0].children[2].innerText
       $.ajax({
         url: 'api/snp/' + snp + '/hgvs',
         method: 'GET',
@@ -61,6 +61,7 @@ function printa(a, protein) {
           $('.modal-body').html('Failed to fetch data.');
         }
       });
+      $('#modalCenter').modal('toggle')
     })
     $('#modalCenter').on('hidden.bs.modal', function (e) {
       $('.modalCenterTitle').html("")
