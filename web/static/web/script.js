@@ -54,7 +54,7 @@ function printa(a, protein) {
         method: 'GET',
         dataType: 'json',
         success: function (data) {
-          $('.modalCenterTitle').text(snp)
+          $('.modalCenterTitle').html("<a target='_blank' href='https://www.ncbi.nlm.nih.gov/snp/" + snp + "'>" + snp + "</a>")
           $('.modal-body').html(printa(data.content, protein));
         },
         error: function () {
