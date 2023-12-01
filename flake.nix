@@ -18,7 +18,7 @@
         mkShell rec {
           packages = [ python311 pipenv ];
           shellHook = ''
-            pipenv shell
+            pipenv shell --fancy
             pre-commit install
           '';
         };
