@@ -10,12 +10,11 @@ services:
       - "8000:8000"
     expose:
       - 8000
-    environment:
-      DEBUG: "True"
     depends_on:
       - redis
     environment:
       - REDIS_HOST=redis
+      - DEBUG="True"
   redis:
     restart: unless-stopped
     image: redis:7.2
