@@ -8,6 +8,7 @@ django = "*"
 requests = "*"
 redis = "*"
 hiredis = "*"
+biopython = "*"
 
 [dev-packages]
 pyright = "*"
