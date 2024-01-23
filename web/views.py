@@ -29,6 +29,6 @@ def index(request):
 def snp_hgvs(request, snpid=None):
     snp = services.SnpData(snpid)
 
-    data = {'content': snp.get_snp_hgvs()}
+    data = {'hgvs': snp.get_snp_hgvs()}
 
     return JsonResponse(data)

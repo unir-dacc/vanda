@@ -47,7 +47,7 @@ function printa(a, protein) {
   $(document).ready(function() {
     $(".clickable-row").click(function() {
       var row = $(this);
-      var snp = row[0].children[1].innerText
+      var snp = row[0].children[1].innerText.slice(2)
       var protein = row[0].children[2].innerText
       $.ajax({
         url: 'api/snp/' + snp + '/hgvs',
@@ -55,7 +55,7 @@ function printa(a, protein) {
         dataType: 'json',
         success: function (data) {
           $('.modalCenterTitle').html("<a target='_blank' href='https://www.ncbi.nlm.nih.gov/snp/" + snp + "'>" + snp + "</a>")
-          $('.modal-body').html(printa(data.content, protein));
+          $('.modal-body').html(printa(data.hgvs, protein));
         },
         error: function () {
           $('.modal-body').html('Failed to fetch data.');

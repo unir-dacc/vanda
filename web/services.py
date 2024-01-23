@@ -1,6 +1,8 @@
 import requests
 import logging
-from django.core.cache import cache
+from Bio import Entrez
+
+Entrez.email = "example@example.org"
 
 
 def search_snp(query):
@@ -21,29 +23,15 @@ class SnpData:
     def __init__(self, snpid):
         self.snpid = snpid
 
-        url = f"https://api.ncbi.nlm.nih.gov/variation/v0/refsnp/{snpid[2:]}"
+        result = ''
 
-        snp_data = cache.get(snpid, None)
+        with Entrez.esummary(db="snp", id=snpid) as handle:
+            result = Entrez.read(handle)
 
-        if snp_data is None:
-            response = requests.get(url)
-
-            if response.status_code == 200:
-                snp_data = response.json()
-                cache.set(snpid, snp_data)
-            else:
-                logging.error(
-                    f"Resonse code on get_snp_data: {response.status_code}")
-
-        self.data = snp_data
+        self.data = result
 
     def get_snp_hgvs(self):
-        snp_data = self.data["primary_snapshot_data"]["placements_with_allele"]
-
-        hgvs = []
-
-        for item in snp_data:
-            for allele in item["alleles"]:
-                hgvs.append(allele["hgvs"])
+        hgvs = self.data["DocumentSummarySet"]['DocumentSummary'][0]['DOCSUM'][5:].split("|")[
+            0].split(',')
 
         return hgvs
