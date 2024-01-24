@@ -21,7 +21,7 @@
             pipenv shell --fancy
             pre-commit install
           '';
+          DJANGO_SETTINGS_MODULE = "dbNGEN.settings_dev";
         };
-      DJANGO_SETTINGS_MODULE = "dbNGEN.settings_dev";
     };
 }
