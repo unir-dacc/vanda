@@ -4,21 +4,15 @@ from django.urls import reverse
 
 from . import services
 
-default_snp = "rs268"
+default_snp = "268"
 snp_response = ['rs268', '8', '19956017', 'A/G', 'LPL']
-hgvs_snp_response = ['NC_000008.11:g.19956018=',
-                     'NC_000008.11:g.19956018A>G',
-                     'NC_000008.10:g.19813529=',
+hgvs_snp_response = ['NC_000008.11:g.19956018A>G',
                      'NC_000008.10:g.19813529A>G',
-                     'NG_008855.2:g.59302=',
                      'NG_008855.2:g.59302A>G',
-                     'NM_000237.3:c.953=',
                      'NM_000237.3:c.953A>G',
-                     'NM_000237.2:c.953=',
                      'NM_000237.2:c.953A>G',
-                     'NP_000228.1:p.Asn318=',
-                     'NP_000228.1:p.Asn318Ser']
-
+                     'NP_000228.1:p.Asn318Ser'
+                     ]
 
 snp = services.SnpData(default_snp)
 
@@ -26,7 +20,7 @@ snp = services.SnpData(default_snp)
 class ServicesTestCase(TestCase):
 
     def test_get_by_name(self):
-        response = services.search_snp(default_snp)
+        response = services.search_snp("rs" + default_snp)
 
         self.assertListEqual(response[0], snp_response)
 
