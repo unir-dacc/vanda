@@ -2,7 +2,7 @@ version: "2"
 
 services:
   web:
-    restart: unless-stopped
+    restart: on-failure
     build:
       context: .
       dockerfile: ./Dockerfile
@@ -18,7 +18,7 @@ services:
     volumes:
     - .:/app
   redis:
-    restart: unless-stopped
+    restart: on-failure
     image: redis:7.2
     expose:
       - 6379
