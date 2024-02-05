@@ -1,8 +1,12 @@
 import requests
 import logging
+import os
 from Bio import Entrez
+from dotenv import load_dotenv
 
-Entrez.email = "example@example.org"
+load_dotenv()
+
+Entrez.email = os.getenv("EMAIL")
 
 
 def search_snp(query):
