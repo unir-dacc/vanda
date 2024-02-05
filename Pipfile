@@ -10,6 +10,7 @@ redis = "*"
 hiredis = "*"
 biopython = "*"
 python-dotenv = "*"
+transformers = "*"
 
 [dev-packages]
 pyright = "*"
