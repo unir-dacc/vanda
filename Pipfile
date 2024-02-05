@@ -9,6 +9,7 @@ requests = "*"
 redis = "*"
 hiredis = "*"
 biopython = "*"
+python-dotenv = "*"
 
 [dev-packages]
 pyright = "*"
