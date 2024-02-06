@@ -11,6 +11,7 @@ hiredis = "*"
 biopython = "*"
 python-dotenv = "*"
 transformers = "*"
+torch = "*"
 
 [dev-packages]
 pyright = "*"
