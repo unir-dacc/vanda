@@ -11,9 +11,7 @@ def gene_summary_abstracts(request, geneid=None):
 
     summary_abstracts = summarizer(abstracts)
 
-    data = {'abstracts': summary_abstracts}
-
-    return JsonResponse(data)
+    return JsonResponse(summary_abstracts)
 
 
 def snp_summary_abstracts(request, snpid=None):
@@ -21,6 +19,4 @@ def snp_summary_abstracts(request, snpid=None):
 
     summary_abstracts = summarizer(abstracts)
 
-    data = {'abstracts': summary_abstracts}
-
-    return JsonResponse(data)
+    return JsonResponse(summary_abstracts)

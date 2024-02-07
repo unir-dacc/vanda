@@ -1,13 +1,13 @@
 from transformers import pipeline
+import logging
 
 
-def summarizer(abstracts):
+def summarizer(articles):
 
-    summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
+    summarizer = pipeline(
+        "summarization", model="facebook/bart-large-cnn")
 
-    summary_abstract = []
+    articles[0]["abstract"] = summarizer(article["abstract"], do_sample=False)
+    logging.info(articles[0]["abstract"])
 
-    for abstract in abstracts:
-        summary_abstract.append(summarizer(abstract, do_sample=False))
-
-    return summary_abstract
+    return articles
