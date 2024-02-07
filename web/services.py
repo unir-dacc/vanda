@@ -88,11 +88,11 @@ def get_abstracts_by_snp(snpid):
     for article in articles['PubmedArticle']:
         if "Abstract" in article["MedlineCitation"]["Article"]:
             abstracts.append({
-                str(article["MedlineCitation"]["PMID"]): [
-                    article["MedlineCitation"]["Article"]["ArticleTitle"],
-                    str(article["MedlineCitation"]["Article"]
-                        ["Abstract"]["AbstractText"][0])
-                ]
+                "pmid": str(article["MedlineCitation"]["PMID"]),
+                "title": article["MedlineCitation"]["Article"]["ArticleTitle"],
+                "abstract": str(article["MedlineCitation"]["Article"]
+                                ["Abstract"]["AbstractText"][0])
+
             })
 
     return abstracts

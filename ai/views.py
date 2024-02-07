@@ -9,7 +9,7 @@ def gene_summary_abstracts(request, geneid=None):
 
     abstracts = services.get_abstracts_by_gene(geneid)
 
-    summary_abstracts = summarizer(abstracts)
+    summary_abstracts = {summarizer(abstracts)}
 
     return JsonResponse(summary_abstracts)
 
@@ -17,6 +17,6 @@ def gene_summary_abstracts(request, geneid=None):
 def snp_summary_abstracts(request, snpid=None):
     abstracts = services.get_abstracts_by_snp(snpid)
 
-    summary_abstracts = summarizer(abstracts)
+    summary_abstracts = {summarizer(abstracts)}
 
     return JsonResponse(summary_abstracts)
