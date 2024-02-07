@@ -12,6 +12,7 @@ biopython = "*"
 python-dotenv = "*"
 transformers = "*"
 torch = "*"
+accelerate = "*"
 
 [dev-packages]
 pyright = "*"
