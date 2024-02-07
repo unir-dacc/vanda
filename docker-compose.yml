@@ -15,6 +15,7 @@ services:
     environment:
       - REDIS_HOST=redis
       - DEBUG="True"
+      - HUGGINGFACE_HUB_CACHE="./.cache"
     volumes:
     - .:/app
   redis:
