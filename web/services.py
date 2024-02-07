@@ -39,3 +39,28 @@ class SnpData:
             0].split(',')
 
         return hgvs
+
+
+def get_abstracts_by_snp(snpid):
+    article_ids = []
+
+    with Entrez.elink(dbfrom="snp", db="pubmed", id=snpid, retmode="xml") as handle:
+        article_ids = Entrez.read(handle)
+
+    articles = []
+    with Entrez.efetch(db="pubmed", id=article_ids, retmode="xml") as handle:
+        articles = Entrez.read(handle)
+
+    abstracts = []
+
+    for article in articles['PubmedArticle']:
+        if "Abstract" in article["MedlineCitation"]["Article"]:
+            abstracts.append({
+                str(article["MedlineCitation"]["PMID"]): [
+                    article["MedlineCitation"]["Article"]["ArticleTitle"],
+                    str(article["MedlineCitation"]["Article"]
+                        ["Abstract"]["AbstractText"][0])
+                ]
+            })
+
+    return abstracts
