@@ -8,10 +8,14 @@ default_pmid = "8541837"
 
 class ServicesTestCase(TestCase):
     def test_get_abstracts_by_snp(self):
-        articles = services.get_abstracts_by_snp(default_snp)[0]
+        articles = services.get_abstracts_by_snp(default_snp)
+
+        pmids = []
 
         for article in articles:
-            self.assertIn(default_pmid, article)
+            pmids.append(article['pmid'])
+
+        self.assertIn(default_pmid, pmids)
 
 
 class ViewTestCase(TestCase):
