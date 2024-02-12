@@ -16,5 +16,6 @@ make docker
 - Install docker and docker-compose
 - Install pipenv `pip install pipenv`
 - Install dependencies `pipenv sync --dev`
+- Run `cp .env.example .env`
 - Run pipenv `pipenv shell`
 - Run `pre-commit install`
