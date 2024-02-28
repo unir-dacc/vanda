@@ -84,15 +84,13 @@ DATABASES = {
     }
 }
 
-REDIS_HOST = environ.get('REDIS_HOST', '127.0.0.1')
-REDIS_PORT = environ.get('REDIS_PORT', '6379')
-
 CACHES = {
     "default": {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": f"redis://{REDIS_HOST}:{REDIS_PORT}",
+        "BACKEND": "django.core.cache.backends.dummy.DummyCache",
     }
 }
+
+
 
 
 # Password validation

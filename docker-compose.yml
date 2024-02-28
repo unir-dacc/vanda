@@ -10,18 +10,8 @@ services:
       - "8000:8000"
     expose:
       - 8000
-    depends_on:
-      - redis
     environment:
-      - REDIS_HOST=redis
       - DEBUG="True"
       - HUGGINGFACE_HUB_CACHE=.cache
     volumes:
     - .:/app
-  redis:
-    restart: on-failure
-    image: redis:7.2
-    expose:
-      - 6379
-    ports:
-      - "6379:6379"
