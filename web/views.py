@@ -26,6 +26,19 @@ def index(request):
     return render(request, 'web/index.html', {"list_response": page_obj})
 
 
+def gene_abstracts(request, geneid=None):
+
+    abstracts = services.get_abstracts_by_gene(geneid)
+
+    return JsonResponse({"articles": abstracts})
+
+
+def snp_abstracts(request, snpid=None):
+    abstracts = services.get_abstracts_by_snp(snpid)
+
+    return JsonResponse({"articles": abstracts})
+
+
 def snp_hgvs(request, snpid=None):
     snp = services.SnpData(snpid)
 

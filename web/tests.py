@@ -47,3 +47,15 @@ class ViewTestCase(TestCase):
 
         response = client.get('/api/snp/' + default_snp + '/hgvs')
         self.assertEqual(response.status_code, 200)
+
+    def test_snp_abstracts(self):
+        client = Client()
+
+        response = client.get('/api/snp/' + default_snp + '/abstracts')
+        self.assertEqual(response.status_code, 200)
+
+    def test_gene_abstracts(self):
+        client = Client()
+
+        response = client.get('/api/gene/' + default_snp + '/abstracts')
+        self.assertEqual(response.status_code, 200)

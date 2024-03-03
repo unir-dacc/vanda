@@ -48,7 +48,7 @@
       <main>
         {% if data %}
           {% for k, v in data.items %}
-            <h1>{{k}}</h1>
+            <h1>{{ k | title }}</h1>
 
             {% for item in v %}
               {% autoescape off %}
