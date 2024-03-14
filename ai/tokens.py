@@ -11,7 +11,7 @@ pipe = pipeline("ner", model=model, tokenizer=tokenizer,
 
 characters = [',', '.', '!', '?', ';', '"', "'", " ", '(', ')']
 
-considerable_tokens = ["Disease_disorder", "Sign_symptom", "Medication"]
+considerable_tokens = ["Disease_disorder"]
 
 context = 130
 
