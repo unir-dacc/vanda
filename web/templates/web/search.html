@@ -45,9 +45,9 @@
     </header>
 
     <main>
-      <div class="show-items">
-        {% if list_response %}
-          <h3>{{ num_items }} SNP founds</h3>
+      {% if list_response %}
+        <h3 id="snp-counter">{{ num_items }} SNP founds</h3>
+        <div class="show-items">
           {% for item in list_response %}
             <h1><a href="{{item.0 | slice:"2:" }}">{{item.0}}</a></h1>
             <div class="desc">
@@ -56,21 +56,21 @@
             </div>
             <br>
           {% endfor %}
-      </div>
-          <nav>
-            <ul class="button-pagination">
-              {% if list_response.has_previous %}
-                <li class="arrow-page"><a  href="javascript:setParam('page', {{ list_response.previous_page_number }})"><i class="fa fa-angle-left"></i></a></li>
-              {% endif %}
-              <li class="current-page"><a  href="javascript:setParam('page', {{ list_response.number }})">{{list_response.number}}</a></li>
-              {% if list_response.has_next %}
-                <li class="arrow-page"><a  href="javascript:setParam('page', {{list_response.next_page_number}})"><i class="fa fa-angle-right"></i></a></li>
-              {% endif %}
-            </ul>
-          </nav>
-        {% else %}
-          <p id="not-found">0 snps found</p>
-        {% endif %}
-      </main>
+        </div>
+        <nav>
+          <ul class="button-pagination">
+            {% if list_response.has_previous %}
+              <li class="arrow-page"><a  href="javascript:setParam('page', {{ list_response.previous_page_number }})"><i class="fa fa-angle-left"></i></a></li>
+            {% endif %}
+            <li class="current-page"><a  href="javascript:setParam('page', {{ list_response.number }})">{{list_response.number}}</a></li>
+            {% if list_response.has_next %}
+              <li class="arrow-page"><a  href="javascript:setParam('page', {{list_response.next_page_number}})"><i class="fa fa-angle-right"></i></a></li>
+            {% endif %}
+          </ul>
+        </nav>
+      {% else %}
+        <p id="not-found">0 snps found</p>
+      {% endif %}
+    </main>
     </body>
   </html>
