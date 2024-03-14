@@ -20,7 +20,7 @@ def search_snp(query):
         logging.error(
             f"Resonse code on services.search_snp: {response.status_code}")
 
-    return {"num_items":r[0], "data": r[3]}
+    return {"num_items": r[0], "data": r[3]}
 
 
 class SnpData:

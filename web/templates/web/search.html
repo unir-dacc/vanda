@@ -36,7 +36,7 @@
           <form action="/search" method="get" class="forms">
             <input type="text" name="q" class="bar" placeholder="rs12345, beta carotene, TP53, regex...">
             <button type="submit" class="bar-button"><i class="fa-solid fa-magnifying-glass"></i></button>
-          </form>   
+          </form>
         </div>
       </div>
       <div class="slogan">
@@ -47,30 +47,30 @@
     <main>
       <div class="show-items">
         {% if list_response %}
-        <h3>{{ num_items }} SNP founds</h3>
-        {% for item in list_response %}
-        <h1><a href="{{item.0 | slice:"2:" }}">{{item.0}}</a></h1>
-          <div class="desc">
-            <h4>Alelles: {{item.2}}</h4>
-            <h4>Gene: {{item.3}}</h4>
+          <h3>{{ num_items }} SNP founds</h3>
+          {% for item in list_response %}
+            <h1><a href="{{item.0 | slice:"2:" }}">{{item.0}}</a></h1>
+            <div class="desc">
+              <h4>Alelles: {{item.2}}</h4>
+              <h4>Gene: {{item.3}}</h4>
+            </div>
+            <br>
+          {% endfor %}
           </div>
-        <br>
-        {% endfor %}
-      </div>
-      <nav>
-        <ul class="button-pagination">
-          {% if list_response.has_previous %}
-          <li class="arrow-page"><a  href="javascript:setParam('page', {{ list_response.previous_page_number }})"><i class="fa fa-angle-left"></i></a></li>
-          {% endif %}
-          <li class="current-page"><a  href="javascript:setParam('page', {{ list_response.number }})">{{list_response.number}}</a></li>
-          {% if list_response.has_next %}
-          <li class="arrow-page"><a  href="javascript:setParam('page', {{list_response.next_page_number}})"><i class="fa fa-angle-right"></i></a></li>
-          {% endif %}
-        </ul>
-      </nav>
-      {% else %}
-        <p id="not-found">0 snps found</p>
-      {% endif %}
-    </main>
-  </body>
-</html>
+          <nav>
+            <ul class="button-pagination">
+              {% if list_response.has_previous %}
+                <li class="arrow-page"><a  href="javascript:setParam('page', {{ list_response.previous_page_number }})"><i class="fa fa-angle-left"></i></a></li>
+              {% endif %}
+              <li class="current-page"><a  href="javascript:setParam('page', {{ list_response.number }})">{{list_response.number}}</a></li>
+              {% if list_response.has_next %}
+                <li class="arrow-page"><a  href="javascript:setParam('page', {{list_response.next_page_number}})"><i class="fa fa-angle-right"></i></a></li>
+              {% endif %}
+            </ul>
+          </nav>
+        {% else %}
+          <p id="not-found">0 snps found</p>
+        {% endif %}
+      </main>
+    </body>
+  </html>
