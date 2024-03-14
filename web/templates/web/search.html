@@ -20,7 +20,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'web/searchStyle.css' %}">
-    <script href="{% static 'web/script.js' %}"></script>
+    <script src="{% static 'web/script.js' %}"></script>
   </head>
   <body>
     <header>
@@ -56,7 +56,7 @@
             </div>
             <br>
           {% endfor %}
-          </div>
+      </div>
           <nav>
             <ul class="button-pagination">
               {% if list_response.has_previous %}
@@ -64,7 +64,7 @@
               {% endif %}
               <li class="current-page"><a  href="javascript:setParam('page', {{ list_response.number }})">{{list_response.number}}</a></li>
               {% if list_response.has_next %}
-                <li class="arrow-page"><a  href="javascript:setParam('page', {{list_response.next_page_number}})"><i class="fa fa-angle-right"></i></a></li>sear
+                <li class="arrow-page"><a  href="javascript:setParam('page', {{list_response.next_page_number}})"><i class="fa fa-angle-right"></i></a></li>
               {% endif %}
             </ul>
           </nav>
