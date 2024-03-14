@@ -10,6 +10,9 @@ PAGE_SIZE = 20
 
 
 def index(request):
+    return render(request, 'web/index.html')
+
+def search(request):
     query = request.GET.get('q', None)
 
     response = []
@@ -17,13 +20,14 @@ def index(request):
     if query is not None:
         response = services.search_snp(query)
 
-    paginator = Paginator(response, PAGE_SIZE)
+    paginator = Paginator(response["data"], PAGE_SIZE)
 
     page_number = request.GET.get("page")
     logging.info(page_number)
     page_obj = paginator.get_page(page_number)
 
-    return render(request, 'web/index.html', {"list_response": page_obj})
+    return render(request, 'web/search.html', {"list_response": page_obj, "num_items": response["num_items"]})
+
 
 
 def gene_abstracts(request, geneid=None):
