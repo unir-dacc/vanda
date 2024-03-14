@@ -1,162 +1,125 @@
-* {
-  font-family: "Roboto", sans-serif;
+*{
   margin: 0;
   padding: 0;
+  text-decoration: none;
   box-sizing: border-box;
   list-style: none;
+}
+body{
+  margin: 0;
+  padding: 0;
+  font-family: "Outfit",sans-serif;
+  font-weight: 500;
+  
+}
+header{
+  color: white;
+  padding: 0;
+  margin: 0;
+  height: 50vh;
+  background: linear-gradient(#36802D,#77AB59);
+}
+main{
+  padding: 0;
+  margin: 0;
   text-decoration: none;
+  box-sizing: border-box;
+  list-style: none;
 }
-
-.site-header {
-  background-color: #e0e4e7;
-  color: #fff;
+.main-cabecalho{
+  width: 100%;
+  height: 100px;
 }
-
-.site-header nav {
+.cabecalho-icon{
+  font-size:20px;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  align-items: center;
-  margin: 0 10.5vw;
+  flex-direction: row;
+  justify-content: end;
+  padding-top:10px ;
+  margin-right: 10vw;
 }
-
-.site-header nav img {
-  width: 200px;
+.icon{
+  padding-right: 20px;
 }
-
-.site-header ul {
+.icon a{
+  color: white;
+}
+.search-main{
+  height: 170px;
+  width: 100%;
   display: flex;
-}
-
-.site-header nav li {
-  margin: 0 20px;
-}
-
-.site-header nav a {
-  text-decoration: none;
-  color: #000;
-  font-size: 2.5em;
-}
-
-.search-container {
-  margin: 50px 0;
-  display: flex;
+  flex-direction: column;
   justify-content: center;
-}
-
-.search-form {
-  display: flex;
   align-items: center;
 }
-
-.search-input {
-  padding: 7px;
-  border: 1px solid #ccc;
-  border-radius: 15px 0 0 15px;
-  font-size: 2.5em;
-  width: 60vw;
+.search{
+  width: auto;
 }
-
 input[type="text"]:focus {
   outline: none;
+  color: black;
+  font-size: 1.4em;
 }
-
-.search-button {
-  padding: 8px 15px;
-  background-color: #19589e;
-  color: #ecf1f7;
+.forms{
+  width: 100%;
+  height: 100%;
+}
+.logo{
+  width: auto;
+  height: auto;
+  margin-bottom: 10px;
+  font-size: 30px;
+  color: black;
+  /* definir altura e largura */
+}
+.bar{
+  height: 8.5vh;
+  width: 40vw;
+  padding-left: 10px;
+  border-radius: 15px 0 0 15px;
   border: none;
+  font-size: 1.5em;
+}
+.bar-button{
+  height: 8.5vh;
+  width: 4.5vw;
   border-radius: 0 15px 15px 0;
-  font-size: 2.5em;
-  cursor: pointer;
-}
-
-.filter-and-table-container {
-  display: flex;
-  justify-content: center;
-  flex-direction: row;
-  margin: 0 10.5vw;
-}
-
-.filter-container {
-  background-color: #e0e4e7;
-  border-radius: 15px;
-  margin: 10px;
-  width: 20%;
-  padding: 20px;
-}
-
-.filter-container nav {
-  padding: 20px;
-}
-
-.filter-container input {
-  width: 15px;
-  height: 15px;
-}
-
-.filter-container label {
-  padding: 10px;
-  font-weight: normal;
-  font-size: 2.5em;
-}
-
-#main-table {
-  background-color: #e0e4e7;
-  border-radius: 15px;
-  margin: 10px;
-  align-text: center;
   border: none;
-  font-size: 2em;
-  overflow: hidden;
+  background-color: #234D20;
+  border-left: none;
+  color: white;
 }
-
-#main-table tr:hover:is(.clickable-row) {
-  box-shadow: inset 0px 0px 0px 2px #bbb;
+.bar-button:hover{
   cursor: pointer;
+  background-color: #32672F;
 }
-
-
-.modal-dialog {
-  max-width: 70%;
+.bar-button i{
+  font-size: 1.7em;
 }
-
-.modal {
-  font-size: 15px;
+.slogan{
+  text-align: center;
+  font-size: 1.8em;
 }
-
-.button-pagination {
+.main-container{
   display: flex;
   flex-direction: row;
   justify-content: center;
+  align-items: center;
 }
-
-.button-pagination li {
-  margin: 10px 5px;
-  font-size: 2em;
+.container{
+  padding: 20px 150px;
+  display: flex;
+  justify-content: center;
 }
-
-.arrow-page {
-  border-radius: 15px;
-  background-color: #146EBE;
+form{
+  display: flex;
+  width: auto;
+  height: auto;
 }
-
-.arrow-page i {
-  padding: 10px 20px;
-  font-weight: bolder;
-  color: white;
-}
-
-.current-page {
-  border-radius: 15px;
-  border: 1px solid #ccc;
-  display: table-cell;
-  color: white;
-}
-
-.current-page a {
-  vertical-align: middle;
-  padding: 10px 20px;
-  font-weight: bolder;
-  text-decoration: none;
+#not-found{
+  font-size: 1.7em;
+  height: 30vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
