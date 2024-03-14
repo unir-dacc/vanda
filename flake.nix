@@ -16,7 +16,7 @@
       devShell.${system} = with pkgs;
 
         mkShell rec {
-          packages = [ python311 pipenv nodejs ];
+          packages = [ python311 pipenv nodejs python311Packages.autopep8 djhtml ];
           shellHook = ''
             pipenv shell --fancy
             pre-commit install
