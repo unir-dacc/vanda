@@ -93,6 +93,9 @@ input[type="text"]:focus {
   cursor: pointer;
   background-color: #32672F;
 }
+.bar-button:focus{
+  outline:none;
+}
 .bar-button i{
   font-size: 1.7em;
 }
