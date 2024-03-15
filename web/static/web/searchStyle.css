@@ -121,43 +121,19 @@ input[type="text"]:focus {
   display: flex;
   flex-direction: row;
 }
-#main-table {
-  background-color: #e0e4e7;
-  border-radius: 15px;
-  margin: 10px;
-  align-text: center;
-  border: none;
-  font-size: 2em;
-  overflow: hidden;
-}
-
 .button-pagination {
   display: flex;
   flex-direction: row;
   justify-content: center;
+  color: black;
+  margin-top: 30px;
+  margin-bottom: 30px;
 }
-.button-pagination li {
-  margin: 10px 5px;
-  font-size: 2em;
+.button-pagination li a{
+  color: black;
+  text-decoration:none;
+  font-size:  2.1em;
 }
-.arrow-page {
-  border-radius: 15px;
-  background-color: #146EBE;
-}
-.arrow-page i {
-  padding: 10px 20px;
-  font-weight: bolder;
-  color: white;
-}
-.current-page {
-  border-radius: 15px;
-  border: 1px solid #ccc;
-  display: table-cell;
-  color: white;
-}
-.current-page a {
-  vertical-align: middle;
-  padding: 10px 20px;
-  font-weight: bolder;
-  text-decoration: none;
+.arrow-page{
+  margin: 0 20px;
 }
