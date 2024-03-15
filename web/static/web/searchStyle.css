@@ -56,7 +56,7 @@ main{
   text-decoration: none;
 }
 .search-main{
-  height: .5vh;
+  height: 50%;
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -74,15 +74,6 @@ input[type="text"]:focus {
   width: auto;
   height: auto;
   display:flex;
-}
-.logo{
-  width: auto;
-  height: auto;
-  margin-bottom: 10px;
-  font-size: 30px;
-  color: black;
-  visibility: hidden;
-  /* definir altura e largura */
 }
 .bar{
   height: 5.5vh;
@@ -107,10 +98,6 @@ input[type="text"]:focus {
 }
 .bar-button i{
   font-size: 20px;
-}
-.slogan{
-  visibility: hidden;
-  text-align: center;
 }
 .show-items{
   display: flex;
