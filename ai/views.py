@@ -14,8 +14,10 @@ def render_topics(abstracts):
     topics = {}
     for item in tokens:
         if topics.get(item['word'].lower()):
+            item['abstract'] = summary(item['abstract'])
             topics[item['word'].lower()].append(item)
         else:
+            item['abstract'] = summary(item['abstract'])
             topics[item['word'].lower()] = [item]
 
     return topics
@@ -24,6 +26,8 @@ def render_topics(abstracts):
 def snp_page(request, snpid):
     abstracts = services.get_abstracts_by_snp(snpid)
 
+    summarized_text = ""
+
     topics = render_topics(abstracts)
 
-    return render(request, 'web/snp.html', {"data": topics})
+    return render(request, 'web/snp.html', {"summary": summarized_text, "data": topics})
