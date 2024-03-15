@@ -41,6 +41,16 @@ main{
 .icon{
   padding-right: 20px;
 }
+.logo-search{
+  flex: auto;
+  margin-left: 10vw;
+}
+.logo-search a{
+  color:white;
+}
+.logo-search a:hover{
+  text-decoration:none;
+}
 .icon a{
   color: white;
   text-decoration: none;
