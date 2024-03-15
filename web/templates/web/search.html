@@ -27,25 +27,20 @@
       <div class="main-cabecalho">
         <div class="icons separate"></div>
         <nav class="cabecalho-icon">
-          <div class="logo-search"><a href="http://127.0.0.1:8000/">dbNGEN</a></div>
+          <div class="logo-search"><a href="/">dbNGEN</a></div>
           <div class="icon"><a href="#"> About</a></div>
           <div class="icon"><a href="https://github.com/riccardoalv/dbNGEN" target="_blank"><i class="fa-brands fa-github"></i> Github</a></div>
         </nav>
       </div>
       <div class="search-main">
         <div class="search">
-          <div class="logo">{dbNGEN-logo}</div>
           <form action="/search" method="get" class="forms">
             <input type="text" name="q" class="bar" placeholder="rs12345, beta carotene, TP53, regex...">
             <button type="submit" class="bar-button"><i class="fa-solid fa-magnifying-glass"></i></button>
           </form>
         </div>
       </div>
-      <div class="slogan">
-        <p>The site, is a very good site for search about snp and more</p>
-      </div>
     </header>
-
     <main>
       {% if list_response %}
         <h3 id="snp-counter">{{ num_items }} SNP founds</h3>
