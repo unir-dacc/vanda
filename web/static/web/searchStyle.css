@@ -118,6 +118,9 @@ input[type="text"]:focus {
   display: flex;
   flex-direction: row;
 }
+.desc h4{
+  margin-left: 10px;
+}
 .button-pagination {
   display: flex;
   flex-direction: row;

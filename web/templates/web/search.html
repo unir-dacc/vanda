@@ -48,8 +48,8 @@
           {% for item in list_response %}
             <h1><a href="{{item.0 | slice:"2:" }}">{{item.0}}</a></h1>
             <div class="desc">
-              <h4>Alelles: {{item.3}}</h4>
               <h4>Gene: {{item.4}}</h4>
+              <h4>Alelles: {{item.3}}</h4>
             </div>
             <br>
           {% endfor %}
