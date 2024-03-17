@@ -61,5 +61,11 @@ class ViewTestCase(TestCase):
     def test_snp_page(self):
         client = Client()
 
-        response = client.get('/' + default_snp)
+        response = client.get('/snp/' + default_snp)
+        self.assertEqual(response.status_code, 200)
+
+    def test_gene_page(self):
+        client = Client()
+
+        response = client.get('/gene/' + default_gene)
         self.assertEqual(response.status_code, 200)
