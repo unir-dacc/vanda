@@ -29,3 +29,10 @@ def snp_page(request, snpid):
     topics = render_topics(abstracts)
 
     return render(request, 'web/snp.html', {"snp_name": "rs" + snpid, "data": topics})
+
+def gene_page(request, geneid):
+    abstracts = services.get_abstracts_by_gene(geneid)
+
+    topics = render_topics(abstracts)
+
+    return render(request, 'web/gene.html', {"gene_name": geneid, "data": topics})

@@ -1,5 +1,5 @@
 from django.core.handlers.asgi import HttpRequest
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.http import JsonResponse
 from django.core.paginator import Paginator
 import logging
@@ -20,6 +20,9 @@ def search(request):
 
     if query is not None:
         response = services.search_snp(query)
+
+    if query.upper() == response["data"][0][4].upper():
+        return redirect(f'gene/{query.upper()}')
 
     paginator = Paginator(response["data"], PAGE_SIZE)
 
