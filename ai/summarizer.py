@@ -1,9 +1,9 @@
 from transformers import pipeline
-from functools import lru_cache
+from functools import cache
 
 
 # TODO: update this cache logic
-@lru_cache(maxsize=128)
+@cache
 def summary(text):
     summarizer = pipeline(
         "summarization", model="Falconsai/medical_summarization")
