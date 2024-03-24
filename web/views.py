@@ -21,8 +21,9 @@ def search(request):
     if query is not None:
         response = services.search_snp(query)
 
-    if query.upper() == response["data"][0][4].upper():
-        return redirect(f'gene/{query.upper()}')
+    if len(response["data"]) > 0:
+        if query.upper() == response["data"][0][4].upper():
+            return redirect(f'gene/{query.upper()}')
 
     paginator = Paginator(response["data"], PAGE_SIZE)
 
