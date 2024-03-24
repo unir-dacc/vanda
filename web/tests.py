@@ -42,6 +42,13 @@ class ViewTestCase(TestCase):
         response = client.get('/search', {"q": default_snp})
         self.assertEqual(response.status_code, 200)
 
+    def test_no_items_found(self):
+        client = Client()
+
+        response = client.get(
+            '/search', {"q": "Lorem ipsum dolor sit amet, qui minim labore adipisicing minim sint cillum sint consectetur cupidatat."})
+        self.assertEqual(response.status_code, 200)
+
     def test_snp(self):
         client = Client()
 
