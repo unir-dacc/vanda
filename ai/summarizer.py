@@ -1,6 +1,9 @@
 from transformers import pipeline
+from functools import cache
 
 
+# TODO: update this cache logic
+@cache
 def summary(text):
     summarizer = pipeline(
         "summarization", model="Falconsai/medical_summarization")

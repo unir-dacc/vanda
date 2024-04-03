@@ -4,134 +4,49 @@
     <head>
         <title>dbNGEN</title>
         <meta charset="UTF-8" />
-        <link
-            rel="icon"
-            href="https://dacc.unir.br/img/favicon.ico"
-            type="image/x-icon"
-        />
+        <link rel="icon" href="https://dacc.unir.br/img/favicon.ico" type="image/x-icon"/>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link
-            href="https://fonts.googleapis.com/css2?family=Roboto&display=swap"
-            rel="stylesheet"
-        />
-        <link
-            rel="stylesheet"
-            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
-        />
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/css/bootstrap.min.css" integrity="sha384-HSMxcRTRxnN+Bdg0JdbxYKrThecOKuH5zCYotlSAcp1+c8xmyTe9GYg1l9a69psu" crossorigin="anonymous">
-
-        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
-        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js"></script>
+        <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
+        <script src="https://kit.fontawesome.com/89c4b0bdbf.js" crossorigin="anonymous"></script>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet">
         <link href="{% static 'web/style.css' %}" rel="stylesheet" />
-        <script src="{% static 'web/script.js' %}"></script>
     </head>
     <body>
-        <header class="site-header">
-            <nav>
-                <a href="https://www.unir.br/homepage"
-                ><img src="{% static 'web/logo_unir.png' %}" alt="logo da unir"/></a>
-                <ul>
-                    <li><a href="#">Sobre</a></li>
-                    <li>
-                        <a href="https://github.com/riccardoalv/dbNGEN" target="_blank"
-                        >Github <i class="fa fa-github"></i
-                            ></a>
-                        </li>
-                    </ul>
-                </nav>
-            </header>
-
-            <main>
-                <div class="modal" id="modalCenter" tabindex="-1" role="dialog" aria-labelledby="modalCenterTitle" aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-centered" role="document">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h2 class="modalCenterTitle"></h2>
-                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                    <span aria-hidden="true">&times;</span>
-                                </button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="spinner-border" role="status">
-                                    <span class="sr-only">Loading...</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="search-container">
-                    <form class="search-form" action="" method="GET">
-                        <input
-                            name="q"
-                            type="text"
-                            class="search-input"
-                            placeholder="rs12345, beta carotene, TP53, regex..."
-                        />
-                        <button type="submit" class="search-button">
-                            <i class="fa fa-search"></i>
-                        </button>
+        <header>
+            <div class="main-cabecalho">
+                <nav class="cabecalho-icon">
+                    <div class="icon"><a href="#"> About</a></div>
+                    <div class="icon"><a href="https://github.com/riccardoalv/dbNGEN" target="_blank"><i class="fa-brands fa-github"></i> Github</a></div> </nav>
+            </div>
+            <div class="search-main">
+                <div class="search">
+                    <div class="logo">{dbNGEN-logo}</div>
+                    <form action="/search" method="get" class="forms">
+                        <input type="text" name="q" class="bar" placeholder="rs12345, beta carotene, TP53, regex...">
+                        <button type="submit" class="bar-button"><i class="fa-solid fa-magnifying-glass"></i></button>
                     </form>
                 </div>
-
-                <div class="filter-and-table-container">
-                    {% if list_response %}
-
-                        <div class="filter-container">
-                            <nav>
-                                <input type="checkbox" name="checkbox" value="asdfasdf">
-                                <label for="proteina">Proteina</label>
-                            </nav>
-                        </div>
-
-                        <table id="main-table" class="table table-striped">
-                            <tr>
-                                <th>Nutriente</th>
-                                <th>SNP</th>
-                                <th>Gene Consequence</th>
-                                <th>Alelles</th>
-                                <th>Position</th>
-                            </tr>
-                            {% for item in list_response %}
-                                <tr class="clickable-row">
-                                    <td></td>
-                                    <td>
-                                        <a data-toggle="tooltip"
-                                           data-html="true"
-                                           data-placement="top"
-                                           title="Loading..."
-                                           target="_blank"
-                                           href="https://www.ncbi.nlm.nih.gov/snp/{{ item.0 }}"
-                                        >{{ item.0 }}</a
-                                            >
-                                        </td>
-                                        <td>{{ item.4 }}</td> <!-- Gene Consequence -->
-                                        <td>{{ item.3 }}</td> <!-- Alelles -->
-                                        <td>{{ item.2 }}</td> <!-- Position -->
-                                    </tr>
-                            {% endfor %}
-                        </table>
-                        </div>
-                        <nav>
-                            <ul class="button-pagination">
-                                {% if list_response.has_previous %}
-                                    <li class="arrow-page"><a  href="javascript:setParam('page', {{ list_response.previous_page_number }})"><i class="fa fa-angle-left"></i></a></li>
-                                {% endif %}
-                                <li class="current-page"><a  href="javascript:setParam('page', {{ list_response.number }})">{{list_response.number}}</a></li>
-                                {% if list_response.has_next %}
-                                    <li class="arrow-page"><a  href="javascript:setParam('page', {{list_response.next_page_number}})"><i class="fa fa-angle-right"></i></a></li>
-                                {% endif %}
-                            </ul>
-                        </nav>
-                    {% else %}
-                        <div class="filter-and-table-container">
-                            <p>0 SNP found</p>
-                        </div>
-                    {% endif %}
-                </main>
-            </body>
-        </html>
+            </div>
+            <div class="slogan">
+                <p>The site, is a very good site for search about snp and more</p>
+            </div>
+        </header>
+        <main>
+            <div class="main-container">
+                <div class="container" id="most-searched">
+                    <h2>Most searched</h2>
+                </div>
+                <div class="container" id="article">
+                    <h2>Article</h2>
+                </div>
+                    <!-- <div class="container" id="container3">
+                        <h2>Title</h2>
+                    </div> -->
+            </div>
+        </main>
+    </body>
+</html>

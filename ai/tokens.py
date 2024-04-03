@@ -11,34 +11,33 @@ pipe = pipeline("ner", model=model, tokenizer=tokenizer,
 
 characters = [',', '.', '!', '?', ';', '"', "'", " ", '(', ')']
 
-considerable_tokens = ["Disease_disorder", "Sign_symptom", "Medication"]
+considerable_tokens = ["Disease_disorder"]
 
 context = 130
 
 
-def tokenize(text):
-    result = pipe(text['abstract'])
+def is_token_in_considerable_tokens(token):
+    return token["entity_group"] in considerable_tokens
 
-    tokens = []
+
+def tokenizer(text):
+    result = pipe(text)
+
     words = []
 
-    for item in result:
-        if item['entity_group'] in considerable_tokens:
-            token = {}
-            while text['abstract'][item['start']] not in characters:
-                item['start'] -= 1
+    tokens = list(filter(is_token_in_considerable_tokens, result))
 
-            while text['abstract'][item['end']] not in characters:
-                item['end'] += 1
+    print(tokens)
+    for item in tokens:
+        while text[item['start']] not in characters:
+            item['start'] -= 1
 
-            word = text['abstract'][item['start'] + 1:item['end']]
+        while text[item['end']] not in characters:
+            item['end'] += 1
 
-            if word not in words:
-                token['word'] = word
-                token['pmid'] = text['pmid']
-                token['title'] = text['title']
-                token['abstract'] = text['abstract']
-                tokens.append(token)
-                words.append(word)
+        word = text[item['start'] + 1:item['end']].lower()
 
-    return tokens
+        if word not in words:
+            words.append(word)
+
+    return words

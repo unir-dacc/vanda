@@ -13,7 +13,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'web/snpStyle.css' %}">
+    <link rel="stylesheet" href="{% static 'web/searchStyle.css' %}">
     <script src="{% static 'web/script.js' %}"></script>
   </head>
   <body>
@@ -35,24 +35,36 @@
         </div>
       </div>
     </header>
-      <main>
-        <h1>{{ snp_name }}</h1>
-        {% if data %}
-          {% for k, v in data.items %}
-            <h2>{{ k | title }}</h2>
-
-            {% for item in v %}
-              {% autoescape off %}
-                <b>{{item.pmid}}:</b><p>{{item.title}}</p><br>
-                <p>{{item.abstract}}</p><br>
-              {% endautoescape %}
-            {% endfor %}
+    <main>
+      {% if list_response %}
+        <h3 id="snp-counter">{{ num_items }} SNP founds</h3>
+        <div class="show-items">
+          {% for item in list_response %}
+            <h1><a href="/snp/{{item.0 | slice:"2:" }}">{{item.0}}</a></h1>
+            <div class="desc">
+              <h4>Gene: {{item.4}}</h4>
+              <h4>Alelles: {{item.3}}</h4>
+            </div>
+            <br>
           {% endfor %}
-        {% else %}
-          <div class="filter-and-table-container">
-            <p>SNP has no data avaliable</p>
-          </div>
-        {% endif %}
-      </main>
+        </div>
+        <nav>
+          <ul class="button-pagination">
+            {% if list_response.has_previous %}
+              <li class="arrow-page"><a  href="javascript:setParam('page', {{ list_response.previous_page_number }})"><i class="fa fa-angle-left"></i></a></li>
+            {% endif %}
+            <li class="current-page"><a  href="javascript:setParam('page', {{ list_response.number }})">{{list_response.number}}</a></li>
+            {% if list_response.has_next %}
+              <li class="arrow-page"><a  href="javascript:setParam('page', {{list_response.next_page_number}})"><i class="fa fa-angle-right"></i></a></li>
+            {% endif %}
+          </ul>
+        </nav>
+      {% else %}
+      <div class="no-items-found">
+        <img src="{% static 'web/no-items-found.png' %}"/>
+        <p id="not-found">0 snps found</p>
+      </div>
+      {% endif %}
+    </main>
     </body>
   </html>

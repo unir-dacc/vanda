@@ -10,13 +10,13 @@ body{
   padding: 0;
   font-family: "Outfit",sans-serif;
   font-weight: 500;
-  
+
 }
 header{
   color: white;
   padding: 0;
   margin: 0;
-  height: 50vh;
+  height: 20vh;
   background: linear-gradient(#36802D,#77AB59);
 }
 main{
@@ -28,7 +28,7 @@ main{
 }
 .main-cabecalho{
   width: 100%;
-  height: 100px;
+  height: auto;
 }
 .cabecalho-icon{
   font-size:20px;
@@ -41,11 +41,22 @@ main{
 .icon{
   padding-right: 20px;
 }
+.logo-search{
+  flex: auto;
+  margin-left: 10vw;
+}
+.logo-search a{
+  color:white;
+}
+.logo-search a:hover{
+  text-decoration:none;
+}
 .icon a{
   color: white;
+  text-decoration: none;
 }
 .search-main{
-  height: 170px;
+  height: 50%;
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -58,31 +69,23 @@ main{
 input[type="text"]:focus {
   outline: none;
   color: black;
-  font-size: 1.4em;
 }
 .forms{
-  width: 100%;
-  height: 100%;
-}
-.logo{
   width: auto;
   height: auto;
-  margin-bottom: 10px;
-  font-size: 30px;
-  color: black;
-  /* definir altura e largura */
+  display:flex;
 }
 .bar{
-  height: 8.5vh;
-  width: 40vw;
+  height: 5.5vh;
+  width: 30vw;
   padding-left: 10px;
   border-radius: 15px 0 0 15px;
   border: none;
-  font-size: 1.5em;
+  font-size: 1.4em;
 }
 .bar-button{
-  height: 8.5vh;
-  width: 4.5vw;
+  height: 5.5vh;
+  width: 3.5vw;
   border-radius: 0 15px 15px 0;
   border: none;
   background-color: #234D20;
@@ -93,36 +96,55 @@ input[type="text"]:focus {
   cursor: pointer;
   background-color: #32672F;
 }
-.bar-button:focus{
-  outline:none;
-}
 .bar-button i{
-  font-size: 1.7em;
+  font-size: 20px;
 }
-.slogan{
-  text-align: center;
-  font-size: 1.8em;
+.show-items{
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  align-items: left;
+  margin-left: 23.5vw;
 }
-.main-container{
+#snp-counter{
+  width:auto;
+  margin-left: 19.5vw;
+  margin-top: 5vh;
+  margin-bottom: 5vh;
+  color: #889696;
+}
+.desc{
+  margin-left: 10px;
+  display: flex;
+  flex-direction: row;
+}
+.desc h4{
+  margin-left: 10px;
+}
+.button-pagination {
   display: flex;
   flex-direction: row;
   justify-content: center;
-  align-items: center;
+  color: black;
+  margin-top: 30px;
+  margin-bottom: 30px;
 }
-.container{
-  padding: 20px 150px;
-  display: flex;
-  justify-content: center;
+.button-pagination li a{
+  color: black;
+  text-decoration:none;
+  font-size:  2.1em;
 }
-form{
-  display: flex;
-  width: auto;
-  height: auto;
+.arrow-page{
+  margin: 0 20px;
+}
+.no-items-found{
+    width: auto;
+    margin-top: 15vh;
+    display: flex;
+    flex-direction: column;
+    font-size: 2em;
+    align-items: center;
 }
 #not-found{
-  font-size: 1.7em;
-  height: 30vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  margin-top:.9vh;
 }
