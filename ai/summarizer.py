@@ -1,15 +1,18 @@
 from transformers import pipeline
-import logging
+from functools import cache
 
 
-def summarizer(articles):
-
+# TODO: update this cache logic
+@cache
+def summary(text):
     summarizer = pipeline(
         "summarization", model="Falconsai/medical_summarization")
 
-    for article in articles:
-        article["abstract"] = summarizer(
-            article["abstract"], max_length=100, min_length=20, do_sample=False)
-        logging.info(article)
+    summary_text = summarizer(
+        text,
+        max_length=100,
+        min_length=20,
+        do_sample=False
+    )
 
-    return articles
+    return summary_text[0]['summary_text']

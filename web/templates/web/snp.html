@@ -1,0 +1,58 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>dbNGEN</title>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="https://dacc.unir.br/img/favicon.ico" type="image/x-icon"/>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <script src="https://kit.fontawesome.com/89c4b0bdbf.js" crossorigin="anonymous"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'web/snpStyle.css' %}">
+    <script src="{% static 'web/script.js' %}"></script>
+  </head>
+  <body>
+    <header>
+      <div class="main-cabecalho">
+        <div class="icons separate"></div>
+        <nav class="cabecalho-icon">
+          <div class="logo-search"><a href="/">dbNGEN</a></div>
+          <div class="icon"><a href="#"> About</a></div>
+          <div class="icon"><a href="https://github.com/riccardoalv/dbNGEN" target="_blank"><i class="fa-brands fa-github"></i> Github</a></div>
+        </nav>
+      </div>
+      <div class="search-main">
+        <div class="search">
+          <form action="/search" method="get" class="forms">
+            <input type="text" name="q" class="bar" placeholder="rs12345, beta carotene, TP53, regex...">
+            <button type="submit" class="bar-button"><i class="fa-solid fa-magnifying-glass"></i></button>
+          </form>
+        </div>
+      </div>
+    </header>
+      <main>
+        <h1>{{ snp_name }}</h1>
+        {% if data %}
+          {% for k, v in data.items %}
+            <h2>{{ k | title }}</h2>
+
+            {% for item in v %}
+              {% autoescape off %}
+                <b>{{item.pmid}}:</b><p>{{item.title}}</p><br>
+                <p>{{item.abstract}}</p><br>
+              {% endautoescape %}
+            {% endfor %}
+          {% endfor %}
+        {% else %}
+          <div class="filter-and-table-container">
+            <p>SNP has no data avaliable</p>
+          </div>
+        {% endif %}
+      </main>
+    </body>
+  </html>

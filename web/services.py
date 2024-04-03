@@ -20,7 +20,7 @@ def search_snp(query):
         logging.error(
             f"Resonse code on services.search_snp: {response.status_code}")
 
-    return r[3]
+    return {"num_items": r[0], "data": r[3]}
 
 
 class SnpData:
@@ -41,21 +41,35 @@ class SnpData:
         return hgvs
 
 
+keywords = ["Metabolism", "Nutrients", "Micronutrients",
+            "Obesity", "Hypertriglyceridaemia"]
+
+
 def get_abstracts_by_gene(geneid):
-    term = f"{geneid} AND (snp_pubmed_cited[Filter] OR snp_pubmed[Filter])"
+    term = f"{geneid.upper()} AND (snp_pubmed_cited[Filter] OR snp_pubmed[Filter])"
     abstracts = []
 
     with Entrez.esearch(db="snp", term=term, retmode="xml") as handle:
         snp_ids = Entrez.read(handle)["IdList"]
 
     pubmed_ids = []
-
     with Entrez.elink(dbfrom="snp", db="pubmed", id=snp_ids, retmode="xml") as handle:
         pubmed_ids = Entrez.read(handle)
 
-    articles = []
+    ids = []
 
-    with Entrez.efetch(db="pubmed", id=pubmed_ids, rettype="medline", retmode="xml") as handle:
+    for i in pubmed_ids:
+        for j in i["LinkSetDb"]:
+            for id in j["Link"]:
+                ids.append(id["Id"])
+
+    filter_term = f'({" OR ".join(ids)}) AND ({" OR ".join(keywords)})'
+
+    with Entrez.esearch(db="pubmed", term=filter_term, retmode="xml") as handle:
+        pubmed_ids = Entrez.read(handle)["IdList"]
+
+    articles = []
+    with Entrez.efetch(db="pubmed", id=ids, rettype="medline", retmode="xml") as handle:
         articles = Entrez.read(handle)
 
     abstracts = []
@@ -77,10 +91,22 @@ def get_abstracts_by_snp(snpid):
     article_ids = []
 
     with Entrez.elink(dbfrom="snp", db="pubmed", id=snpid, retmode="xml") as handle:
-        article_ids = Entrez.read(handle)
+        pubmed_ids = Entrez.read(handle)
+
+    ids = []
+
+    for i in pubmed_ids:
+        for j in i["LinkSetDb"]:
+            for id in j["Link"]:
+                ids.append(id["Id"])
+
+    filter_term = f'({" OR ".join(ids)}) AND ({" OR ".join(keywords)})'
+
+    with Entrez.esearch(db="pubmed", term=filter_term, retmode="xml") as handle:
+        pubmed_ids = Entrez.read(handle)["IdList"]
 
     articles = []
-    with Entrez.efetch(db="pubmed", id=article_ids, retmode="xml") as handle:
+    with Entrez.efetch(db="pubmed", id=pubmed_ids, retmode="xml") as handle:
         articles = Entrez.read(handle)
 
     abstracts = []

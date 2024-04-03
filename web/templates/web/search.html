@@ -1,0 +1,70 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>dbNGEN</title>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="https://dacc.unir.br/img/favicon.ico" type="image/x-icon"/>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <script src="https://kit.fontawesome.com/89c4b0bdbf.js" crossorigin="anonymous"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'web/searchStyle.css' %}">
+    <script src="{% static 'web/script.js' %}"></script>
+  </head>
+  <body>
+    <header>
+      <div class="main-cabecalho">
+        <div class="icons separate"></div>
+        <nav class="cabecalho-icon">
+          <div class="logo-search"><a href="/">dbNGEN</a></div>
+          <div class="icon"><a href="#"> About</a></div>
+          <div class="icon"><a href="https://github.com/riccardoalv/dbNGEN" target="_blank"><i class="fa-brands fa-github"></i> Github</a></div>
+        </nav>
+      </div>
+      <div class="search-main">
+        <div class="search">
+          <form action="/search" method="get" class="forms">
+            <input type="text" name="q" class="bar" placeholder="rs12345, beta carotene, TP53, regex...">
+            <button type="submit" class="bar-button"><i class="fa-solid fa-magnifying-glass"></i></button>
+          </form>
+        </div>
+      </div>
+    </header>
+    <main>
+      {% if list_response %}
+        <h3 id="snp-counter">{{ num_items }} SNP founds</h3>
+        <div class="show-items">
+          {% for item in list_response %}
+            <h1><a href="/snp/{{item.0 | slice:"2:" }}">{{item.0}}</a></h1>
+            <div class="desc">
+              <h4>Gene: {{item.4}}</h4>
+              <h4>Alelles: {{item.3}}</h4>
+            </div>
+            <br>
+          {% endfor %}
+        </div>
+        <nav>
+          <ul class="button-pagination">
+            {% if list_response.has_previous %}
+              <li class="arrow-page"><a  href="javascript:setParam('page', {{ list_response.previous_page_number }})"><i class="fa fa-angle-left"></i></a></li>
+            {% endif %}
+            <li class="current-page"><a  href="javascript:setParam('page', {{ list_response.number }})">{{list_response.number}}</a></li>
+            {% if list_response.has_next %}
+              <li class="arrow-page"><a  href="javascript:setParam('page', {{list_response.next_page_number}})"><i class="fa fa-angle-right"></i></a></li>
+            {% endif %}
+          </ul>
+        </nav>
+      {% else %}
+      <div class="no-items-found">
+        <img src="{% static 'web/no-items-found.png' %}"/>
+        <p id="not-found">0 snps found</p>
+      </div>
+      {% endif %}
+    </main>
+    </body>
+  </html>
