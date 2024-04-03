@@ -1,5 +1,5 @@
 from ai.summarizer import summary
-from ai.tokens import tokenize
+from ai.tokens import tokenizer
 from django.test import TestCase, Client
 
 from web import services
@@ -45,14 +45,7 @@ class ModelsTestCase(TestCase):
         self.assertLess(len(summary_abstract), len(default_gene_abstract))
 
     def test_tokenize_text(self):
-
-        text = {
-            'abstract': default_snp_abstract,
-            'pmid': default_snp_pmid,
-            'title': default_snp_title
-        }
-
-        tokens = tokenize(text)
+        tokens = tokenizer(default_snp_abstract)
 
         self.assertGreater(len(tokens), 0)
 
