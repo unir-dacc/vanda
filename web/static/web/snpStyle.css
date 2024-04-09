@@ -21,10 +21,14 @@ header{
 }
 main{
   padding: 0;
-  margin: 0;
+  margin: 0 12vw;
   text-decoration: none;
   box-sizing: border-box;
   list-style: none;
+}
+main h1{
+  font-size: 3em;
+  margin: 4vh 0;
 }
 .main-cabecalho{
   width: 100%;
@@ -148,9 +152,4 @@ input[type="text"]:focus {
 #not-found{
   margin-top:.9vh;
 }
-h1{
-  margin-left: 23.5vw;
-}
-h2{
-  margin-left: 22vw;
-}
+
