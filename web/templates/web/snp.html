@@ -27,8 +27,7 @@
         </nav>
       </div>
       <div class="search-main">
-        <div class="search">
-          <form action="/search" method="get" class="forms">
+        <div class="search"> <form action="/search" method="get" class="forms">
             <input type="text" name="q" class="bar" placeholder="rs12345, beta carotene, TP53, regex...">
             <button type="submit" class="bar-button"><i class="fa-solid fa-magnifying-glass"></i></button>
           </form>
@@ -36,7 +35,10 @@
       </div>
     </header>
       <main>
-        <h1>{{ snp_name }}</h1>
+        <div class="header-snp">
+          <h1>{{ snp_name }}</h1>
+          <a href="https://www.ncbi.nlm.nih.gov/snp/{{ snp_name }}" target="blank"><img src="{% static 'web/NIH_Logo.png' %}" alt="dbsnp"></a>
+          </div>
         {% if data %}
           {% for k, v in data.items %}
             <h2>{{ k | title }}</h2>

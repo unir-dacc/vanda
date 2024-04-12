@@ -26,10 +26,6 @@ main{
   box-sizing: border-box;
   list-style: none;
 }
-main h1{
-  font-size: 3em;
-  margin: 4vh 0;
-}
 .main-cabecalho{
   width: 100%;
   height: auto;
@@ -152,4 +148,17 @@ input[type="text"]:focus {
 #not-found{
   margin-top:.9vh;
 }
-
+.header-snp{
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  margin: 4vh 0;
+}
+.header-snp img{
+  width: 40px;
+  height: 40px;
+  margin-left: 20px;
+}
+.header-snp h1{
+  font-size: 3em;
+}
