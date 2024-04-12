@@ -42,10 +42,9 @@
         {% if data %}
           {% for k, v in data.items %}
             <h2>{{ k | title }}</h2>
-
             {% for item in v %}
               {% autoescape off %}
-                <b>{{item.pmid}}:</b><p>{{item.title}}</p><br>
+                <p>[ <a href="https://pubmed.ncbi.nlm.nih.gov/{{ item.pmid }}" target="blank"><b>PMID {{item.pmid}}</b></a> ] {{item.title}}</p><br>
                 <p>{{item.abstract}}</p><br>
               {% endautoescape %}
             {% endfor %}
