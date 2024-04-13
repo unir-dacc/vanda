@@ -13,7 +13,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'web/searchStyle.css' %}">
     <link rel="stylesheet" href="{% static 'web/snpStyle.css' %}">
     <script src="{% static 'web/script.js' %}"></script>
   </head>
@@ -37,14 +36,17 @@
       </div>
     </header>
       <main>
-        <h1>{{ gene_name }}</h1>
+        <div class="header-snp">
+          <h1>{{ gene_name }}</h1>
+          <a href="#" target="blank"><img src="{% static 'web/NIH_Logo.png' %}" alt="dbsnp"></a>
+        </div>
         {% if data %}
           {% for k, v in data.items %}
             <h2>{{ k | title }}</h2>
 
             {% for item in v %}
               {% autoescape off %}
-                <b>{{item.pmid}}:</b><p>{{item.title}}</p><br>
+                <p>[ <a href="https://pubmed.ncbi.nlm.nih.gov/{{ item.pmid }}" target="blank"><b>PMID {{item.pmid}}</b></a> ] {{item.title}}</p><br>
                 <p>{{item.abstract}}</p><br>
               {% endautoescape %}
             {% endfor %}
