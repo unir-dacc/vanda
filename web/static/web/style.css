@@ -41,6 +41,9 @@ main{
 .icon{
   padding-right: 20px;
 }
+.icon i{
+  margin-left: 5px;
+}
 .icon a{
   color: white;
 }

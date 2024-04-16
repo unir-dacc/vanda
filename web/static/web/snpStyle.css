@@ -36,14 +36,17 @@ main{
   flex-direction: row;
   justify-content: end;
   padding-top:10px ;
-  margin-right: 10vw;
+  margin-right: 20vw;
 }
 .icon{
-  padding-right: 20px;
+  padding-right: 10px;
+}
+.icon i{
+  margin-left: 5px;
 }
 .logo-search{
   flex: auto;
-  margin-left: 10vw;
+  margin-left: 20vw;
 }
 .logo-search a{
   color:white;
