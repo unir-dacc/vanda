@@ -58,6 +58,10 @@ main{
   color: white;
   text-decoration: none;
 }
+.icon a:hover{
+  color: #E5E6E4;
+  text-decoration: underline;
+}
 .search-main{
   height: 50%;
   width: 100%;

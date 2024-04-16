@@ -47,6 +47,10 @@ main{
 .icon a{
   color: white;
 }
+.icon a:hover{
+  color: #E5E6E4;
+  text-decoration: underline;
+}
 .search-main{
   height: 170px;
   width: 100%;
