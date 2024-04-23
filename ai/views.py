@@ -22,7 +22,7 @@ def render_topics(articles):
                     {
                         "pmid": article["pmid"],
                         "title": article["title"],
-                        "abstract": article["abstract"]
+                        "abstract": summary(article["abstract"])
                     }
                 )
 
@@ -31,10 +31,11 @@ def render_topics(articles):
 
 def snp_page(request, snpid):
     articles = services.get_abstracts_by_snp(snpid)
+    gene_name = services.search_snp("rs" + snpid)["data"][0][4].upper()
 
     topics = render_topics(articles)
 
-    return render(request, 'web/snp.html', {"snp_name": "rs" + snpid, "data": topics})
+    return render(request, 'web/snp.html', {"snp_name": "rs" + snpid, "gene_name": gene_name, "data": topics})
 
 
 def gene_page(request, geneid):
