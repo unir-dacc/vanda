@@ -159,12 +159,25 @@ input[type="text"]:focus {
   display: flex;
   flex-direction: row;
   align-items: flex-end;
-  margin: 4vh 0;
+  margin: 1vh 0;
 }
 .header-snp img{
   width: 40px;
   height: 40px;
   margin-left: 20px;
+}
+#gene-name{
+  margin-bottom: 1.5vh;
+}
+#gene-name span{
+  font-size: .7em;
+}
+#gene-name span:link{
+  color: ;
+}
+#pmid-link:link{
+  text-decoration: none;
+  font-weight: 100;
 }
 .header-snp h1{
   font-size: 3em;

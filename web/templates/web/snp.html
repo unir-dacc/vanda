@@ -39,12 +39,13 @@
           <h1>{{ snp_name }}</h1>
           <a href="https://www.ncbi.nlm.nih.gov/snp/{{ snp_name }}" target="blank"><img src="{% static 'web/NIH_Logo.png' %}" alt="dbsnp"></a>
           </div>
+          <h1 id="gene-name">Gene: <span><a href="/gene/{{ gene_name}}" target="blank">{{ gene_name }}</a></span></h1>
         {% if data %}
           {% for k, v in data.items %}
             <h2>{{ k | title }}</h2>
             {% for item in v %}
               {% autoescape off %}
-                <p>[ <a href="https://pubmed.ncbi.nlm.nih.gov/{{ item.pmid }}" target="blank"><b>PMID {{item.pmid}}</b></a> ] {{item.title}}</p><br>
+                <p>[ <a href="https://pubmed.ncbi.nlm.nih.gov/{{ item.pmid }}" target="blank" id="pmid-link"><b>PMID {{item.pmid}}</b></a> ] {{item.title}}</p><br>
                 <p>{{item.abstract}}</p><br>
               {% endautoescape %}
             {% endfor %}
