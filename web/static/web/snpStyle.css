@@ -159,7 +159,10 @@ input[type="text"]:focus {
   display: flex;
   flex-direction: row;
   align-items: flex-end;
-  margin: 1vh 0;
+  margin-top: 1.5vh;
+}
+.header-snp h2{
+  margin-top: 1.5vh;
 }
 .header-snp img{
   width: 40px;
@@ -172,15 +175,11 @@ input[type="text"]:focus {
 #gene-name span{
   font-size: .7em;
 }
-#gene-name span:link{
-  color: ;
-}
-#pmid-link:link{
-  text-decoration: none;
-  font-weight: 100;
-}
 .header-snp h1{
   font-size: 3em;
+}
+.main-header-snp{
+  margin: 3vh 0 4vh 0;
 }
 main b:hover{
   text-decoration: underline;

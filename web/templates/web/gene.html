@@ -36,9 +36,11 @@
       </div>
     </header>
       <main>
-        <div class="header-snp">
-          <h1>{{ gene_name }}</h1>
-          <a href="#" target="blank"><img src="{% static 'web/NIH_Logo.png' %}" alt="dbsnp"></a>
+        <div class="main-header-snp">
+            <div class="header-snp">
+              <h1>{{ gene_name }}</h1>
+              <a href="#" target="blank"><img src="{% static 'web/NIH_Logo.png' %}" alt="dbsnp"></a>
+          </div>
         </div>
         {% if data %}
           {% for k, v in data.items %}
@@ -46,7 +48,7 @@
 
             {% for item in v %}
               {% autoescape off %}
-                <p>[ <a href="https://pubmed.ncbi.nlm.nih.gov/{{ item.pmid }}" target="blank"><b>PMID {{item.pmid}}</b></a> ] {{item.title}}</p><br>
+                <p>[ <a href="https://pubmed.ncbi.nlm.nih.gov/{{ item.pmid }}" target="blank">PMID {{item.pmid}}</a> ] {{item.title}}</p><br>
                 <p>{{item.abstract}}</p><br>
               {% endautoescape %}
             {% endfor %}
