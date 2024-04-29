@@ -184,3 +184,6 @@ input[type="text"]:focus {
 main b:hover{
   text-decoration: underline;
 }
+.desc-gene{
+  margin-top: 1.6vh;
+}

@@ -39,9 +39,9 @@
         <div class="main-header-snp">
             <div class="header-snp">
               <h1>{{ gene_name }}</h1>
-              <a href="#" target="blank"><img src="{% static 'web/NIH_Logo.png' %}" alt="dbsnp"></a>
+              <a href="https://www.genecards.org/cgi-bin/carddisp.pl?gene={{ gene_name }}" target="blank"><img src="{% static 'web/NIH_Logo.png' %}" alt="GeneCards"></a>
           </div>
-          {{description}}
+          <p class="desc-gene">{{description}}</p>
         </div>
         {% if data %}
           {% for k, v in data.items %}
