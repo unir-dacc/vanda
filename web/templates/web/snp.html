@@ -40,9 +40,9 @@
           <h1>{{ snp_name }}</h1>
           <a href="https://www.ncbi.nlm.nih.gov/snp/{{ snp_name }}" target="blank"><img src="{% static 'web/NIH_Logo.png' %}" alt="dbsnp"></a>
         </div>
-        <h1 id="gene-name">Gene: <span>
+        <h1 id="gene-name">Gene:
           {% for gene in gene_name %}
-          <a href="/gene/{{ gene }}" target="blank">{{ gene }}</a></span>
+          <span><a href="/gene/{{ gene }}" target="blank">{{ gene }}</a></span>
           {% endfor %}
         </h1>
       </div>
