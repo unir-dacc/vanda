@@ -41,6 +41,7 @@
               <h1>{{ gene_name }}</h1>
               <a href="#" target="blank"><img src="{% static 'web/NIH_Logo.png' %}" alt="dbsnp"></a>
           </div>
+          {{description}}
         </div>
         {% if data %}
           {% for k, v in data.items %}

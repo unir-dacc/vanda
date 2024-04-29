@@ -31,7 +31,7 @@ def render_topics(articles):
 
 def snp_page(request, snpid):
     articles = services.get_abstracts_by_snp(snpid)
-    gene_name = services.search_snp("rs" + snpid)["data"][0][4].upper()
+    gene_name = services.search_snp("rs" + snpid)["data"][0][4].split()
 
     topics = render_topics(articles)
 
@@ -39,8 +39,15 @@ def snp_page(request, snpid):
 
 
 def gene_page(request, geneid):
-    abstracts = services.get_abstracts_by_gene(geneid)
+    abstracts = []
+
+    try:
+        abstracts = services.get_abstracts_by_gene(geneid)
+    except:
+        print(f"Gene {geneid} has no data available")
 
     topics = render_topics(abstracts)
 
-    return render(request, 'web/gene.html', {"gene_name": geneid, "data": topics})
+    description = services.get_summary_of_gene(geneid)
+
+    return render(request, 'web/gene.html', {"gene_name": geneid, "data": topics, "description": description})
