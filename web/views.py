@@ -2,7 +2,6 @@ from django.core.handlers.asgi import HttpRequest
 from django.shortcuts import redirect, render
 from django.http import JsonResponse
 from django.core.paginator import Paginator
-import logging
 
 from . import services
 
@@ -25,10 +24,12 @@ def search(request):
         if query.upper() == response["data"][0][4].upper():
             return redirect(f'gene/{query.upper()}')
 
+    for snp in response["data"]:
+        snp[4] = snp[4].split()
+
     paginator = Paginator(response["data"], PAGE_SIZE)
 
     page_number = request.GET.get("page")
-    logging.info(page_number)
     page_obj = paginator.get_page(page_number)
 
     return render(request,
