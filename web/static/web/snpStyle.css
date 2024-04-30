@@ -165,9 +165,10 @@ input[type="text"]:focus {
   margin-top: 1.5vh;
 }
 .header-snp img{
-  width: 40px;
-  height: 40px;
+  width: 30px;
+  height: 30px;
   margin-left: 20px;
+  margin-bottom: .7vh;
 }
 #gene-name{
   margin-bottom: 1.5vh;
