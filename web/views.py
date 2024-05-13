@@ -24,13 +24,15 @@ def search(request):
         if query.upper() == response["data"][0][4].upper():
             return redirect(f'gene/{query.upper()}')
 
-    for snp in response["data"]:
-        snp[4] = snp[4].split()
-
     paginator = Paginator(response["data"], PAGE_SIZE)
 
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
+
+    for snp in page_obj:
+        snp[4] = snp[4].split()
+        snp_data = services.SnpData(snp[0][2:])
+        snp.append(snp_data.get_snp_hgvs())
 
     return render(request,
                   'web/search.html',

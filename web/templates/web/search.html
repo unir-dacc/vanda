@@ -48,6 +48,10 @@
             {% endfor %}
           </h4>
           <h4>Alelles: {{item.3}}</h4>
+          <h4>HGVS:</h4> 
+          {% for hgvs in item.5%}
+            <p>{{hgvs}}</p>
+          {% endfor %}
         </div>
         <br>
           {% endfor %}
