@@ -47,11 +47,8 @@
               <a href="/gene/{{ gene }}" target="blank">{{ gene }}</a></span>
             {% endfor %}
           </h4>
-          <h4>Alelles: {{item.3}}</h4>
-          <h4>HGVS:</h4> 
-          {% for hgvs in item.5%}
-            <p>{{hgvs}}</p>
-          {% endfor %}
+          <h3>Alelles: <h4>{{item.3}}</h4></h3>
+          <h4>HGVS: {% for hgvs in item.5%}{{hgvs}}{% endfor %}</h4>
         </div>
         <br>
           {% endfor %}
