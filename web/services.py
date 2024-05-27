@@ -40,7 +40,10 @@ class SnpData:
 
         return hgvs
 
-keywords = ["Metabolism", "Nutrients", "Micronutrients", "Obesity", "Hypertriglyceridaemia"]
+
+keywords = ["Metabolism", "Nutrients", "Micronutrients",
+            "Obesity", "Hypertriglyceridaemia"]
+
 
 def get_abstracts_by_gene(geneid):
     term = f"{geneid.upper()} AND (snp_pubmed_cited[Filter] OR snp_pubmed[Filter])"
@@ -54,11 +57,17 @@ def get_abstracts_by_gene(geneid):
         pubmed_ids = Entrez.read(handle)
 
     ids = []
+    snp_to_pubmed = {}
 
     for i in pubmed_ids:
         for j in i["LinkSetDb"]:
             for id in j["Link"]:
                 ids.append(id["Id"])
+                if i["IdList"][0] in snp_to_pubmed:
+                    snp_to_pubmed[i["IdList"][0]].append(id["Id"])
+                else:
+                    snp_to_pubmed[i["IdList"][0]] = []
+                    snp_to_pubmed[i["IdList"][0]].append(id["Id"])
 
     filter_term = f'({" OR ".join(ids)}) AND ({" OR ".join(keywords)})'
 
@@ -81,7 +90,8 @@ def get_abstracts_by_gene(geneid):
 
             })
 
-    return abstracts
+    return abstracts, snp_to_pubmed
+
 
 def get_summary_of_gene(geneid):
     gene_ids = []

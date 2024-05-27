@@ -4,6 +4,20 @@ from ai.tokens import tokenizer
 from web import services
 
 
+def remove_duplicates(dicts, key):
+    seen = set()
+    unique_dicts = []
+
+    for d in dicts:
+        key_tuple = tuple(d[key])
+
+        if key_tuple not in seen:
+            seen.add(key_tuple)
+            unique_dicts.append(d)
+
+    return unique_dicts
+
+
 def render_topics(articles):
 
     for item in articles:
@@ -40,14 +54,41 @@ def snp_page(request, snpid):
 
 def gene_page(request, geneid):
     abstracts = []
+    snp_to_pubmed = {}
 
     try:
-        abstracts = services.get_abstracts_by_gene(geneid)
+        abstracts, snp_to_pubmed = services.get_abstracts_by_gene(geneid)
     except:
         print(f"Gene {geneid} has no data available")
 
     topics = render_topics(abstracts)
 
     description = services.get_summary_of_gene(geneid)
+    snp_topics = {}
 
-    return render(request, 'web/gene.html', {"gene_name": geneid, "data": topics, "description": description})
+    for k, v in snp_to_pubmed.items():
+        for i in v:
+            for _, a in topics.items():
+                for article in a:
+                    if i == article["pmid"]:
+                        if k in snp_topics:
+                            snp_topics[k].append({
+                                "pmid": article["pmid"],
+                                "title": article["title"],
+                                "abstract": article["abstract"]
+                            })
+                        else:
+                            snp_topics[k] = []
+                            snp_topics[k].append({
+                                "pmid": article["pmid"],
+                                "title": article["title"],
+                                "abstract": article["abstract"]
+                            })
+
+    for k in snp_topics:
+        snp_topics[k] = remove_duplicates(snp_topics[k], "pmid")
+
+    print(snp_topics)
+    description = services.get_summary_of_gene(geneid)
+
+    return render(request, 'web/gene.html', {"gene_name": geneid, "data": topics, "description": description, "snp_topics": snp_topics})
