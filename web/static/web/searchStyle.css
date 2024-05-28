@@ -126,7 +126,10 @@ input[type="text"]:focus {
   flex-direction: row;
 }
 .desc h4{
-  margin-left: 10px;
+  display: flex;
+  flex-direction: row;
+  margin: 0 10px;
+
 }
 .button-pagination {
   display: flex;

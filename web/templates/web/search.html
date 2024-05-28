@@ -43,12 +43,15 @@
         <h1><a href="/snp/{{item.0 | slice:"2:" }}">{{item.0}}</a></h1>
         <div class="desc">
           <h4>Gene:
-            {% for gene in item.4 %}
-              <a href="/gene/{{ gene }}" target="blank">{{ gene }}</a></span>
-            {% endfor %}
+            <span>{% for gene in item.4 %}
+              <a href="/gene/{{ gene }}" target="blank">{{ gene }}</a>
+            {% endfor %}</span>
           </h4>
-          <h3>Alelles: <h4>{{item.3}}</h4></h3>
-          <h4>HGVS: {% for hgvs in item.5%}{{hgvs}}{% endfor %}</h4>
+          <h4>Alelles:<span> {{item.3}}</span></h4>
+          <h4>HGVS:
+            <span>{% for hgvs in item.5%}{{hgvs}}
+              {% endfor %}</span>
+          </h4>
         </div>
         <br>
           {% endfor %}
