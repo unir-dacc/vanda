@@ -60,6 +60,8 @@ main{
   align-items: center;
 }
 .search{
+  display: flex;
+  flex-direction: column;
   width: auto;
 }
 input[type="text"]:focus {
@@ -76,8 +78,27 @@ input[type="text"]:focus {
   height: auto;
   margin-bottom: 10px;
   font-size: 30px;
-  color: black;
+  color: white;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
   /* definir altura e largura */
+}
+.logo-circle{
+  width: 115px;
+  height: 115px;
+  background-color: white;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+#logo-img{
+  width: 90px;
+  height: 90px;
+}
+.logo-name{
+  margin-left: 10px;
 }
 .bar{
   height: 8.5vh;
@@ -107,6 +128,7 @@ input[type="text"]:focus {
   font-size: 1.7em;
 }
 .slogan{
+  margin-top: .7%;
   text-align: center;
   font-size: 1.8em;
 }

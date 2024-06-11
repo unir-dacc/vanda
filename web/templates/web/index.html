@@ -25,16 +25,22 @@
             </div>
             <div class="search-main">
                 <div class="search">
-                    <div class="logo">{dbNGEN-logo}</div>
+                    <div class="logo">
+                        <div class="logo-circle">
+                            <img src="{% static 'web/vandaLogo.svg' %}" id="logo-img">
+                        </div>
+                        <h1 class="logo-name">VANDA</h1>
+                    </div>
                     <form action="/search" method="get" class="forms">
                         <input type="text" name="q" class="bar" placeholder="rs12345, beta carotene, TP53, regex...">
                         <button type="submit" class="bar-button"><i class="fa-solid fa-magnifying-glass"></i></button>
                     </form>
                 </div>
+                <div class="slogan">
+                    <p>The site, is a very good site for search about snp and more</p>
+                </div>
             </div>
-            <div class="slogan">
-                <p>The site, is a very good site for search about snp and more</p>
-            </div>
+            
         </header>
         <main>
             <div class="main-container">
