@@ -27,7 +27,7 @@ class ServicesTestCase(TestCase):
         self.assertIn(default_snp_pmid, pmids)
 
     def test_get_abstracts_by_gene(self):
-        articles = services.get_abstracts_by_gene(default_gene)
+        articles, snp_to_pubmed = services.get_abstracts_by_gene(default_gene)
 
         pmids = []
 
