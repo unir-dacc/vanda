@@ -32,7 +32,6 @@ class SnpData:
 
         with Entrez.esummary(db="snp", id=snpid) as handle:
             result = Entrez.read(handle)
-            print(result)
 
         self.data = result
 
