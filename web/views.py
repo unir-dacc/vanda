@@ -35,7 +35,10 @@ def search(request):
     for snp in data:
         snps.append(snp[0][2:])
 
-    hgvs = services.SnpData(snps).get_snp_hgvs()
+    hgvs = []
+
+    if snps:
+        hgvs = services.SnpData(snps).get_snp_hgvs()
 
     for i in range(len(data)):
         data[i][4] = data[i][4].split()
