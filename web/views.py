@@ -16,28 +16,48 @@ def search(request):
     query = request.GET.get('q', None)
 
     response = []
+    num_items = 0
 
     if query is not None:
         response = services.search_snp(query)
+        num_items = response["num_items"]
 
     if len(response["data"]) > 0:
         if query.upper() == response["data"][0][4].upper():
             return redirect(f'gene/{query.upper()}')
 
-    paginator = Paginator(response["data"], PAGE_SIZE)
+    single_gene = request.GET.get("single_gene")
+    multiple_genes = request.GET.get("multiple_genes")
+
+    data = response["data"]
+
+    snps = []
+    for snp in data:
+        snps.append(snp[0][2:])
+
+    hgvs = []
+
+    if snps:
+        hgvs = services.SnpData(snps).get_snp_hgvs()
+
+    for i in range(len(data)):
+        data[i][4] = data[i][4].split()
+        data[i].append(hgvs[i])
+
+    if single_gene:
+        data = list(filter(lambda x: len(x[4]) == 1, data))
+        num_items = len(data)
+
+    if multiple_genes:
+        data = list(filter(lambda x: len(x[4]) > 1, data))
+        num_items = len(data)
+
+    paginator = Paginator(data, PAGE_SIZE)
 
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
-    for snp in page_obj:
-        snp[4] = snp[4].split()
-        snp_data = services.SnpData(snp[0][2:])
-        snp.append(snp_data.get_snp_hgvs())
-
-    return render(request,
-                  'web/search.html',
-                  {"list_response": page_obj,
-                   "num_items": response["num_items"]})
+    return render(request, 'web/search.html', {"list_response": page_obj, "num_items": num_items})
 
 
 def gene_abstracts(request, geneid=None):

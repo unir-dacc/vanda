@@ -26,6 +26,7 @@ def search_snp(query):
 class SnpData:
     def __init__(self, snpid):
         self.snpid = snpid
+        self.is_list = type(snpid) == list
 
         result = ''
 
@@ -35,6 +36,14 @@ class SnpData:
         self.data = result
 
     def get_snp_hgvs(self):
+        hgvs = []
+
+        if self.is_list:
+            for item in self.data["DocumentSummarySet"]['DocumentSummary']:
+                hgvs.append(item["DOCSUM"][5:].split("|")[0].split(","))
+
+            return hgvs
+
         hgvs = self.data["DocumentSummarySet"]['DocumentSummary'][0]['DOCSUM'][5:].split("|")[
             0].split(',')
 
