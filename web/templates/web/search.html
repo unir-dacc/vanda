@@ -51,7 +51,11 @@
         <h3 id="snp-counter">{{ num_items }} SNP founds</h3>
         <div class="show-items">
           {% for item in list_response %}
-            <h1><a href="/snp/{{item.0 | slice:"2:" }}">{{item.0}}</a></h1>
+            <div class="checkbox-title">
+            <input type="checkbox" class="checkbox-snp" name="select-checbox">
+            <a href="/snp/{{item.0 | slice:"2:" }}">
+            <h1>{{item.0}}</h1></a>
+            </div>
             <div class="desc">
               <h4>Gene:
                 <span>{% for gene in item.4 %}

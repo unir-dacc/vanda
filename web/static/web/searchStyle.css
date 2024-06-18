@@ -188,3 +188,12 @@ input[type="text"]:focus {
 #not-found{
   margin-top:.9vh;
 }
+.checkbox-title{
+  display:flex;
+  align-items: center;
+}
+.checkbox-snp{
+  margin-right:15px;
+  width: 15px;
+  height: 15px;
+}
