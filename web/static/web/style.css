@@ -97,8 +97,14 @@ input[type="text"]:focus {
   width: 90px;
   height: 90px;
 }
-.logo-name{
+.logo-name-div{
+  display: flex;
+  flex-direction: column;
   margin-left: 10px;
+}
+.big-logo-name{
+  font-weight: 100px;
+  font-size: .75em;
 }
 .bar{
   height: 8.5vh;
