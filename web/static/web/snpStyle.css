@@ -34,9 +34,49 @@ main{
   font-size:20px;
   display: flex;
   flex-direction: row;
-  justify-content: end;
+  justify-content: space-between;
   padding-top:10px ;
-  margin-right: 20vw;
+  margin:0 20vw;
+}
+.r-side{
+  display:flex;
+}
+.icon{
+  display:flex;
+  padding-right: 10px;
+}
+.icon i{
+  margin-left: 5px;
+}
+.logo{
+  width: auto;
+  height: auto;
+  margin-bottom: 10px;
+  font-size: 20px;
+  color: white;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  justify-self: start;
+}
+.logo-circle{
+  width: 25px;
+  height: 25px;
+  background-color: white;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+#logo-img{
+  width: 20px;
+  height: 20px;
+}
+.logo-name-div{
+  display: flex;
+  flex-direction: column;
+  margin-left: 5px;
+  font-size: 20px;
 }
 .icon{
   padding-right: 10px;
