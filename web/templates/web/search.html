@@ -49,38 +49,57 @@
     <main>
       {% if list_response %}
         <h3 id="snp-counter">{{ num_items }} SNP founds</h3>
-        <div class="show-items">
-          {% for item in list_response %}
-            <div class="checkbox-title">
-            <input type="checkbox" class="checkbox-snp" name="select-checbox">
-            <a href="/snp/{{item.0 | slice:"2:" }}">
-            <h1>{{item.0}}</h1></a>
+        <div class="principal">
+          <div class="filter-main">
+            <h3>Filters</h3>
+            <div class="align-filter">
+              <div class="filters">
+                <input type="checkbox" name="singleGene" id="singleGene">
+                <label for="singleGene">Single Gene</label>
+              </div>
+              <div class="filters">
+                <input type="checkbox" name="multipleGenes" id="multipleGenes">
+                <label for="multipleGenes">multiple Genes</label>
+              </div>
             </div>
-            <div class="desc">
-              <h4>Gene:
-                <span>{% for gene in item.4 %}
-                  <a href="/gene/{{ gene }}" target="blank">{{ gene }}</a>
-                {% endfor %}</span>
-              </h4>
-              <h4>Alelles:<span> {{item.3}}</span></h4>
-              <h4>HGVS:
-                <span>
-                  {% for hgvs in item.5 %}
-                    {% if hgvs|slice:"0:2" == "XP" or hgvs|slice:"0:2" == "NP" %}
-                      <a href="https://www.ncbi.nlm.nih.gov/protein/{{hgvs | split:':'}}">
-                        {{ hgvs }}
-                      </a>
-                    {% else %}
-                      <a href="https://www.ncbi.nlm.nih.gov/nuccore/{{hgvs | split:':'}}">
-                        {{ hgvs }}
-                      </a>
-                    {% endif %}
-                  {% endfor %}
-                </span>
-              </h4>
-            </div>
-            <br>
-          {% endfor %}
+          </div>
+          <div class="show-items">
+            {% for item in list_response %}
+              <div class="checkbox-title">
+              <input type="checkbox" class="checkbox-snp" name="select-checbox">
+              <a href="/snp/{{item.0 | slice:"2:" }}">
+                <div class="align-showItems">
+                  <div>
+                    <h1>{{item.0}}</h1></a>
+                  </div>
+                  <div class="desc">
+                    <h4>Gene:
+                      <span>{% for gene in item.4 %}
+                        <a href="/gene/{{ gene }}" target="blank">{{ gene }}</a>
+                      {% endfor %}</span>
+                    </h4>
+                    <h4>Alelles:<span> {{item.3}}</span></h4>
+                    <h4>HGVS:
+                      <span>
+                        {% for hgvs in item.5 %}
+                          {% if hgvs|slice:"0:2" == "XP" or hgvs|slice:"0:2" == "NP" %}
+                            <a href="https://www.ncbi.nlm.nih.gov/protein/{{hgvs | split:':'}}">
+                              {{ hgvs }}
+                            </a>
+                          {% else %}
+                            <a href="https://www.ncbi.nlm.nih.gov/nuccore/{{hgvs | split:':'}}">
+                              {{ hgvs }}
+                            </a>
+                          {% endif %}
+                        {% endfor %}
+                      </span>
+                    </h4>
+                  </div>
+                  <br>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
         </div>
         <nav>
           <ul class="button-pagination">
