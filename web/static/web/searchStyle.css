@@ -237,3 +237,21 @@ input[type="text"]:focus {
 .filters input:hover{
   cursor: pointer;
 }
+.alignButtonHgvs{
+  display: flex;
+  flex-direction: row;
+}
+.collapsible{
+  background-color: #d1d6d6;
+  outline: none;
+  border: solid 1px black;
+  width: 40px;
+  height: 20px;
+  cursor: pointer;
+  border-radius: 15%;
+}
+.content{
+  display: none;
+  overflow: hidden;
+  padding: 10px 0;
+}

@@ -79,21 +79,25 @@
                       {% endfor %}</span>
                     </h4>
                     <h4>Alelles:<span> {{item.3}}</span></h4>
-                    <h4>HGVS:
-                      <span>
-                        {% for hgvs in item.5 %}
-                          {% if hgvs|slice:"0:2" == "XP" or hgvs|slice:"0:2" == "NP" %}
-                            <a href="https://www.ncbi.nlm.nih.gov/protein/{{hgvs | split:':'}}">
-                              {{ hgvs }}
-                            </a>
-                          {% else %}
-                            <a href="https://www.ncbi.nlm.nih.gov/nuccore/{{hgvs | split:':'}}">
-                              {{ hgvs }}
-                            </a>
-                          {% endif %}
-                        {% endfor %}
-                      </span>
-                    </h4>
+                    <h4>HGVS:</h4>
+                    <div class="mainHgvs">
+                      <button type="button" class="collapsible">show</button>
+                      <div class="content">
+                        <span>
+                          {% for hgvs in item.5 %}
+                            {% if hgvs|slice:"0:2" == "XP" or hgvs|slice:"0:2" == "NP" %}
+                              <a href="https://www.ncbi.nlm.nih.gov/protein/{{hgvs | split:':'}}">
+                                {{ hgvs }}
+                              </a>
+                            {% else %}
+                              <a href="https://www.ncbi.nlm.nih.gov/nuccore/{{hgvs | split:':'}}">
+                                {{ hgvs }}
+                              </a>
+                            {% endif %}
+                          {% endfor %}
+                        </span>  
+                      </div>
+                    </div>
                   </div>
                   <br>
                 </div>
