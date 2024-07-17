@@ -23,7 +23,7 @@ def search(request):
         num_items = response["num_items"]
 
     if len(response["data"]) > 0:
-        if query.upper() == response["data"][0][4].upper():
+        if query.upper() in response["data"][0][4].upper():
             return redirect(f'gene/{query.upper()}')
 
     single_gene = request.GET.get("single_gene")
