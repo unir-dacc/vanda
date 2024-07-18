@@ -50,8 +50,20 @@ class SnpData:
         return hgvs
 
 
-keywords = ["Metabolism", "Nutrients", "Micronutrients",
-            "Obesity", "Hypertriglyceridaemia"]
+base_keywords = [
+    "Nutrients",
+    "Nutrigenomics",
+    "Nutrigenetics",
+    "Diet",
+    "Diets",
+]
+
+combinations_keywords = [
+    "Genetic Predisposition to Disease",
+    "Dietary Supplements",
+]
+
+filter_term = f' AND ({"[MeSH Terms] OR ".join(base_keywords)}) AND ({"[MeSH Terms] OR ".join(base_keywords + combinations_keywords)})'
 
 
 def get_abstracts_by_gene(geneid):
@@ -64,6 +76,9 @@ def get_abstracts_by_gene(geneid):
     pubmed_ids = []
     with Entrez.elink(dbfrom="snp", db="pubmed", id=snp_ids, retmode="xml") as handle:
         pubmed_ids = Entrez.read(handle)
+
+    if not pubmed_ids:
+        return [], {}
 
     ids = []
     snp_to_pubmed = {}
@@ -78,13 +93,13 @@ def get_abstracts_by_gene(geneid):
                     snp_to_pubmed[i["IdList"][0]] = []
                     snp_to_pubmed[i["IdList"][0]].append(id["Id"])
 
-    filter_term = f'({" OR ".join(ids)}) AND ({" OR ".join(keywords)})'
+    filter_search = f'({" OR ".join(ids)})' + filter_term
 
-    with Entrez.esearch(db="pubmed", term=filter_term, retmode="xml") as handle:
+    with Entrez.esearch(db="pubmed", term=filter_search, retmode="xml") as handle:
         pubmed_ids = Entrez.read(handle)["IdList"]
 
     articles = []
-    with Entrez.efetch(db="pubmed", id=ids, rettype="medline", retmode="xml") as handle:
+    with Entrez.efetch(db="pubmed", id=pubmed_ids, rettype="medline", retmode="xml") as handle:
         articles = Entrez.read(handle)
 
     abstracts = []
@@ -119,8 +134,6 @@ def get_summary_of_gene(geneid):
 
 
 def get_abstracts_by_snp(snpid):
-    article_ids = []
-
     with Entrez.elink(dbfrom="snp", db="pubmed", id=snpid, retmode="xml") as handle:
         pubmed_ids = Entrez.read(handle)
 
@@ -131,9 +144,12 @@ def get_abstracts_by_snp(snpid):
             for id in j["Link"]:
                 ids.append(id["Id"])
 
-    filter_term = f'({" OR ".join(ids)}) AND ({" OR ".join(keywords)})'
+    if not ids:
+        return []
 
-    with Entrez.esearch(db="pubmed", term=filter_term, retmode="xml") as handle:
+    filter_search = f'({" OR ".join(ids)})' + filter_term
+
+    with Entrez.esearch(db="pubmed", term=filter_search, retmode="xml") as handle:
         pubmed_ids = Entrez.read(handle)["IdList"]
 
     articles = []
