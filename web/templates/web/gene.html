@@ -23,10 +23,10 @@
         <nav class="cabecalho-icon">
           <div class="l-side"><a href="\"><div class="logo">
             <div class="logo-circle">
-                <img src="{% static 'web/vandaLogo.svg' %}" id="logo-img">
+              <img src="{% static 'web/vandaLogo.svg' %}" id="logo-img">
             </div>
             <div class="logo-name-div">
-                <span class="logo-name">VANDA</span>
+              <span class="logo-name">VANDA</span>
             </div>
           </div></a>
           </div>
@@ -55,7 +55,7 @@
       </div>
       {% if data %}
         {% for k, v in snp_topics.items %}
-          <h2>rs{{ k | title }}</h2>
+          <h2><a href="../snp/{{ k }}">rs{{ k | title }}</a></h2>
 
           {% for item in v %}
             {% autoescape off %}
