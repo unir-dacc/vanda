@@ -23,10 +23,10 @@
         <nav class="cabecalho-icon">
           <div class="l-side"><a href="\"><div class="logo">
             <div class="logo-circle">
-                <img src="{% static 'web/vandaLogo.svg' %}" id="logo-img">
+              <img src="{% static 'web/vandaLogo.svg' %}" id="logo-img">
             </div>
             <div class="logo-name-div">
-                <span class="logo-name">VANDA</span>
+              <span class="logo-name">VANDA</span>
             </div>
           </div></a>
           </div>
@@ -52,22 +52,22 @@
         </div>
         <h1 id="gene-name">Gene:
           {% for gene in gene_name %}
-          <span><a href="/gene/{{ gene }}" target="blank">{{ gene }}</a></span>
+            <span><a href="/gene/{{ gene }}" target="blank">{{ gene }}</a></span>
           {% endfor %}
         </h1>
       </div>
       {% if data %}
-      {% for k, v in data.items %}
-      <h2>{{ k | title }}</h2>
-      {% for item in v %}
-      {% autoescape off %}
-      <p>[ <a href="https://pubmed.ncbi.nlm.nih.gov/{{ item.pmid }}" target="blank" id="pmid-link">PMID {{item.pmid}}</a> ] {{item.title}}</p><br>
-      <p>{{item.abstract}}</p><br>
-        {% endautoescape %}
+        {% for k, v in data.items %}
+          <h2>{{ k | title }}</h2>
+          {% for item in v %}
+            {% autoescape off %}
+              <p>[ <a href="https://pubmed.ncbi.nlm.nih.gov/{{ item.pmid }}" target="blank" id="pmid-link">PMID {{item.pmid}}</a> ] {{item.title}}</p><br>
+              <p>{{item.abstract}}</p><br>
+            {% endautoescape %}
+          {% endfor %}
         {% endfor %}
-        {% endfor %}
-        {% else %}
-      <p>SNP has no data avaliable</p>
+      {% else %}
+        <p>The SNP doesn't have data associated with nutrigenetics</p>
       {% endif %}
     </main>
   </body>
