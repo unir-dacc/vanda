@@ -36,7 +36,7 @@ def render_topics(articles):
                     {
                         "pmid": article["pmid"],
                         "title": article["title"],
-                        "abstract": summary(article["abstract"])
+                        "abstract": article["abstract"]
                     }
                 )
 
