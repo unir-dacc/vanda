@@ -1,4 +1,4 @@
-# dbNGEN
+# VANDA
 
 Desenvolvimento de uma Plataforma WEB para analise e Exploração de Dados NutriGeneticos
 
