@@ -71,7 +71,9 @@ def get_abstracts_by_gene(geneid):
     abstracts = []
 
     with Entrez.esearch(db="snp", term=term, retmode="xml") as handle:
-        snp_ids = Entrez.read(handle)["IdList"]
+        snp_ids = Entrez.read(handle)
+        if snp_ids:
+            snp_ids = snp_ids["IdList"]
 
     pubmed_ids = []
     with Entrez.elink(dbfrom="snp", db="pubmed", id=snp_ids, retmode="xml") as handle:
@@ -98,6 +100,9 @@ def get_abstracts_by_gene(geneid):
     with Entrez.esearch(db="pubmed", term=filter_search, retmode="xml") as handle:
         pubmed_ids = Entrez.read(handle)["IdList"]
 
+    if not pubmed_ids:
+        return [], {}
+
     articles = []
     with Entrez.efetch(db="pubmed", id=pubmed_ids, rettype="medline", retmode="xml") as handle:
         articles = Entrez.read(handle)
@@ -109,9 +114,7 @@ def get_abstracts_by_gene(geneid):
             abstracts.append({
                 "pmid": str(article["MedlineCitation"]["PMID"]),
                 "title": article["MedlineCitation"]["Article"]["ArticleTitle"],
-                "abstract": str(article["MedlineCitation"]["Article"]
-                                ["Abstract"]["AbstractText"][0])
-
+                "abstract": str(article["MedlineCitation"]["Article"]["Abstract"]["AbstractText"][0])
             })
 
     return abstracts, snp_to_pubmed
@@ -153,6 +156,7 @@ def get_abstracts_by_snp(snpid):
         pubmed_ids = Entrez.read(handle)["IdList"]
 
     articles = []
+    print(pubmed_ids)
     with Entrez.efetch(db="pubmed", id=pubmed_ids, retmode="xml") as handle:
         articles = Entrez.read(handle)
 
@@ -165,7 +169,6 @@ def get_abstracts_by_snp(snpid):
                 "title": article["MedlineCitation"]["Article"]["ArticleTitle"],
                 "abstract": str(article["MedlineCitation"]["Article"]
                                 ["Abstract"]["AbstractText"][0])
-
             })
 
     return abstracts
