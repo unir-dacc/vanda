@@ -15,54 +15,6 @@ def index(request):
 def search(request):
     query = request.GET.get('q', None)
 
-    response = []
-    num_items = 0
-
-    if query is not None:
-        response = services.search_snp(query)
-        num_items = response["num_items"]
-
-    if len(response["data"]) > 0:
-        if query.upper() in response["data"][0][4].upper():
-            return redirect(f'gene/{query.upper()}')
-
-    single_gene = request.GET.get("single_gene")
-    multiple_genes = request.GET.get("multiple_genes")
-
-    data = response["data"]
-
-    snps = []
-    for snp in data:
-        snps.append(snp[0][2:])
-
-    hgvs = []
-
-    if snps:
-        hgvs = services.SnpData(snps).get_snp_hgvs()
-
-    for i in range(len(data)):
-        data[i][4] = data[i][4].split()
-        data[i].append(hgvs[i])
-
-    if single_gene:
-        data = list(filter(lambda x: len(x[4]) == 1, data))
-        num_items = len(data)
-
-    if multiple_genes:
-        data = list(filter(lambda x: len(x[4]) > 1, data))
-        num_items = len(data)
-
-    paginator = Paginator(data, PAGE_SIZE)
-
-    page_number = request.GET.get("page")
-    page_obj = paginator.get_page(page_number)
-
-    return render(request, 'web/search.html', {"list_response": page_obj, "num_items": num_items})
-
-
-def search_api(request):
-    query = request.GET.get('q', None)
-
     if query is None:
         return JsonResponse({})
 
@@ -84,7 +36,14 @@ def search_api(request):
     hgvs = []
 
     if snps:
-        hgvs = services.SnpData(snps).get_snp_hgvs()
+        hgvs_data = services.SnpData(snps).get_snp_hgvs()
+
+        for snp in hgvs_data:
+            p = list(filter(lambda x: x[1:2] == "P", snp))
+            c = list(filter(lambda x: x[1:2] == "C", snp))
+            m = list(filter(lambda x: x[1:2] == "M", snp))
+
+            hgvs.append([p, c, m])
 
     for i in range(len(data)):
         data[i][4] = data[i][4].split()
@@ -98,7 +57,21 @@ def search_api(request):
         data = list(filter(lambda x: len(x[4]) > 1, data))
         num_items = len(data)
 
-    return JsonResponse({"search_response": data, "num_items": num_items})
+    return {"search_response": data, "num_items": num_items}
+
+
+def search_view(request):
+    data = search(request)
+
+    print(data)
+
+    return render(request, 'web/search.html', data)
+
+
+def search_api(request):
+    data = search(request)
+
+    return JsonResponse(data)
 
 
 def gene_abstracts(request, geneid=None):
