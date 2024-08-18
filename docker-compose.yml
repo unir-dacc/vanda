@@ -1,6 +1,5 @@
 services:
   web:
-    network_mode: "host"
     restart: on-failure
     build:
       context: .

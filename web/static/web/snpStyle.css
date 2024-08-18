@@ -228,3 +228,9 @@ main b:hover{
 .desc-gene{
   margin-top: 1.6vh;
 }
+#snp-container{
+  display: none;
+}
+#keywords-container{
+  display: block;
+}
