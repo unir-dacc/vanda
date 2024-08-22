@@ -234,3 +234,23 @@ main b:hover{
 #keywords-container{
   display: block;
 }
+button{
+  min-width: 5vw;
+  min-height: auto;
+  font-size: 1em;
+  padding: 1vh;
+  border-radius: 4%;
+  border: solid 1px #303030;
+  margin-bottom: 1vh;
+  background-color: white;
+}
+button:not(.clicked):hover{
+  background-color: #d9dbdb;
+}
+button:hover{
+  cursor: pointer;
+}
+.clicked{
+  background-color: #303030;
+  color: white;
+}
