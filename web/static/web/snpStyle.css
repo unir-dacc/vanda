@@ -4,6 +4,7 @@
   text-decoration: none;
   box-sizing: border-box;
   list-style: none;
+  text-align: justify;
 }
 body{
   margin: 0;
@@ -243,6 +244,7 @@ button{
   border: solid 1px #303030;
   margin-bottom: 1vh;
   background-color: white;
+  text-align: center;
 }
 button:not(.clicked):hover{
   background-color: #d9dbdb;
