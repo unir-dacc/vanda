@@ -61,9 +61,14 @@ def search(request):
 
 
 def search_view(request):
+    query = request.GET.get('q', None)
+
     data = search(request)
 
-    print(data)
+    snps_related = data['search_response']
+
+    if query.upper() in snps_related[0][4]:
+        return redirect(f'gene/{query.upper()}')
 
     return render(request, 'web/search.html', data)
 
