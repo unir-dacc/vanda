@@ -101,6 +101,7 @@
                 <tr>
                   <th scope="col">SNP</th>
                   <th scope="col">dbSNP</th>
+                  <th scope="col">Gene</th>
                   <th scope="col">Mutation</th>
                   <th scope="col">Posição</th>
                   <th scope="col">Protein</th>
@@ -110,6 +111,7 @@
                 <tr>
                   <th><input type="text" class="form-control" id="filter-snp"></th>
                   <th></th>
+                  <th><input type="text" class="form-control" id="filter-gene"></th>
                   <th><input type="text" class="form-control" id="filter-mutation"></th>
                   <th></th>
                   <th><input type="text" class="form-control" id="filter-np"></th>
@@ -130,8 +132,9 @@
                         <img src="{% static 'web/NIH_Logo.png' %}" alt="NCBI Logo" class="mr-3" style="width: 40px;">
                       </a>
                     </td>
+                    <td class="py-2 px-4 ">{{ item.4|join:' ' }}</td>
                     <td class="py-2 px-4 border-bottom break-words">{{ item.3 }}</td>
-                    <td class="py-2 px-4 border-bottom break-words">{{ item.2 }}</td>
+                    <td class="py-2 px-4 ">{{ item.2 }}</td>
                     <td class="py-2 px-4 border-bottom break-words">
                       {{ item.5.0|join:' ' }}
                     </td>
@@ -168,12 +171,13 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
     <script>
-      document.querySelectorAll('#filter-snp, #filter-mutation, #filter-np, #filter-nc, #filter-nm').forEach(input => {
+      document.querySelectorAll('#filter-snp, #filter-gene, #filter-mutation, #filter-np, #filter-nc, #filter-nm').forEach(input => {
         input.addEventListener('input', filterTable);
       });
 
       function filterTable() {
         const snpFilter = document.getElementById('filter-snp').value.toLowerCase();
+        const geneFilter = document.getElementById('filter-gene').value.toLowerCase();
         const mutationFilter = document.getElementById('filter-mutation').value.toLowerCase();
         const npFilter = document.getElementById('filter-np').value.toLowerCase();
         const ncFilter = document.getElementById('filter-nc').value.toLowerCase();
@@ -183,12 +187,14 @@
 
         rows.forEach(row => {
           const snpCell = row.children[0].textContent.toLowerCase();
-          const mutationCell = row.children[2].textContent.toLowerCase();
+          const geneCell = row.children[2].textContent.toLowerCase();
+          const mutationCell = row.children[3].textContent.toLowerCase();
           const npCell = row.children[4].textContent.toLowerCase();
           const ncCell = row.children[5].textContent.toLowerCase();
           const nmCell = row.children[5].textContent.toLowerCase();
 
           if (snpCell.includes(snpFilter) &&
+            geneCell.includes(geneFilter) &&
             mutationCell.includes(mutationFilter) &&
             npCell.includes(npFilter) &&
             ncCell.includes(ncFilter) &&
