@@ -26,6 +26,7 @@
     .table-auto {
       table-layout: auto;
       overflow: hidden;
+      padding-right: 6vh;
     }
 
     .hover-bg {
@@ -167,7 +168,7 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
     <script>
-      document.querySelectorAll('#filter-snp', '#filter-mutation', '#filter-np', '#filter-nc', '#filter-nm').forEach(input => {
+      document.querySelectorAll('#filter-snp, #filter-mutation, #filter-np, #filter-nc, #filter-nm').forEach(input => {
         input.addEventListener('input', filterTable);
       });
 
