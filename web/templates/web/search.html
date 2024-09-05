@@ -15,8 +15,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'web/searchStyle.css' %}">
-    <script src="{% static 'web/script.js' %}"></script>
+    <link rel="stylesheet" href="/vanda/{% static 'web/searchStyle.css' %}">
+    <script src="/vanda/{% static 'web/script.js' %}"></script>
   </head>
   <style>
     .min-w-full {
@@ -54,9 +54,9 @@
       <div class="main-cabecalho">
         <div class="icons separate"></div>
         <nav class="cabecalho-icon">
-          <div class="l-side"><a href="\"><div class="logo">
+          <div class="l-side"><a href="/vanda/"><div class="logo">
             <div class="logo-circle">
-              <img src="{% static 'web/vandaLogo.svg' %}" id="logo-img">
+              <img src="/vanda/{% static 'web/vandaLogo.svg' %}" id="logo-img">
             </div>
             <div class="logo-name-div">
               <span class="logo-name">VANDA</span>
@@ -129,7 +129,7 @@
                     </td>
                     <td class="py-2 px-4 border-bottom break-words">
                       <a href="https://www.ncbi.nlm.nih.gov/snp/{{ item.0 }}" target="_blank" rel="noopener noreferrer">
-                        <img src="{% static 'web/NIH_Logo.png' %}" alt="NCBI Logo" class="mr-3" style="width: 40px;">
+                        <img src="/vanda/{% static 'web/NIH_Logo.png' %}" alt="NCBI Logo" class="mr-3" style="width: 40px;">
                       </a>
                     </td>
                     <td class="py-2 px-4 ">{{ item.4|join:' ' }}</td>
@@ -163,7 +163,7 @@
         </nav>
       {% else %}
         <div class="no-items-found">
-          <img src="{% static 'web/no-items-found.png' %}"/>
+          <img src="/vanda/{% static 'web/no-items-found.png' %}"/>
           <p id="not-found">0 snps found</p>
         </div>
       {% endif %}
@@ -207,6 +207,6 @@
         });
       }
     </script>
-    <script src="{% static 'web/scriptCollapsible.js' %}"></script>
+    <script src="/vanda/{% static 'web/scriptCollapsible.js' %}"></script>
   </body>
 </html>
