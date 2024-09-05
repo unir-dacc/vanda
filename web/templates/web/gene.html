@@ -14,8 +14,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="./{% static 'web/snpStyle.css' %}">
-    <script src="./{% static 'web/script.js' %}"></script>
-    <script src="./{% static 'web/button.js' %}"></script>
+    <script src=".{% static 'web/script.js' %}"></script>
+    <script src=".{% static 'web/button.js' %}"></script>
   </head>
   <body>
     <header>
@@ -24,7 +24,7 @@
         <nav class="cabecalho-icon">
           <div class="l-side"><a href="\"><div class="logo">
             <div class="logo-circle">
-              <img src="./{% static 'web/vandaLogo.svg' %}" id="logo-img">
+              <img src=".{% static 'web/vandaLogo.svg' %}" id="logo-img">
             </div>
             <div class="logo-name-div">
               <span class="logo-name">VANDA</span>
@@ -50,7 +50,7 @@
       <div class="main-header-snp">
         <div class="header-snp">
           <h1>{{ gene_name }}</h1>
-          <a href="https://www.genecards.org/cgi-bin/carddisp.pl?gene={{ gene_name }}" target="blank"><img src="./{% static 'web/GeneCards-logo.png' %}" alt="GeneCards" title="GeneCards"></a>
+          <a href="https://www.genecards.org/cgi-bin/carddisp.pl?gene={{ gene_name }}" target="blank"><img src=".{% static 'web/GeneCards-logo.png' %}" alt="GeneCards" title="GeneCards"></a>
         </div>
         <p class="desc-gene">{{description}}</p>
       </div>

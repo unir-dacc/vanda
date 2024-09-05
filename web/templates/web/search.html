@@ -16,7 +16,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="./{% static 'web/searchStyle.css' %}">
-    <script src="./{% static 'web/script.js' %}"></script>
+    <script src=".{% static 'web/script.js' %}"></script>
   </head>
   <style>
     .min-w-full {
@@ -163,7 +163,7 @@
         </nav>
       {% else %}
         <div class="no-items-found">
-          <img src="{% static 'web/no-items-found.png' %}"/>
+          <img src=".{% static 'web/no-items-found.png' %}"/>
           <p id="not-found">0 snps found</p>
         </div>
       {% endif %}
@@ -207,6 +207,6 @@
         });
       }
     </script>
-    <script src="{% static 'web/scriptCollapsible.js' %}"></script>
+    <script src=".{% static 'web/scriptCollapsible.js' %}"></script>
   </body>
 </html>
