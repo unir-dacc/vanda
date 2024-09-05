@@ -7,7 +7,7 @@ services:
     ports:
       - "30534:8000"
     environment:
-      - DEBUG="True"
+      - DEBUG=${DEBUG}
       - HUGGINGFACE_HUB_CACHE=.cache
     volumes:
       - .:/app
