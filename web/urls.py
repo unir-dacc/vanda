@@ -11,4 +11,5 @@ urlpatterns = [
          views.snp_abstracts, name="snp_abstracts"),
     path("api/gene/<str:geneid>/abstracts",
          views.gene_abstracts, name="gene_abstracts"),
+     path("about", views.about, name="about"),
 ]

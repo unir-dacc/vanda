@@ -98,3 +98,6 @@ def snp_hgvs(request, snpid=None):
     data = {'hgvs': snp.get_snp_hgvs()}
 
     return JsonResponse(data)
+
+def about(request):
+    return render(request, 'web/about.html')
