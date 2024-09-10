@@ -153,20 +153,20 @@ main{
     margin: 0 20vw;
 }
 h1{
-    font-size: 3em;
+    font-size: 2em;
     margin: 20px;
 }
 .about-text{
     text-align: justify;
     padding: 30px;
-    font-size: 1.2em;
+    font-size: 1em;
 }
 .profiles{
     padding: 20px;
 }
 .circle-box {
-    width: 20vw;
-    height: 20vw;
+    width: 18vw;
+    height: 18vw;
     background-color: black;
     border-radius: 50%;
 }
@@ -230,14 +230,14 @@ footer{
 /* resposive */
 @media screen and (min-width: 800px) and (max-width: 1200px) {
     .circle-box {
-        width: 15vw;
-        height: 15vw;
+        width: 13vw;
+        height: 13vw;
     }
 }
 
 @media screen and (min-width: 1200px) {
     .circle-box {
-        width: 8vw;
-        height: 8vw;
+        width: 6vw;
+        height: 6vw;
     }
 }
