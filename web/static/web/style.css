@@ -138,17 +138,6 @@ input[type="text"]:focus {
   text-align: center;
   font-size: 1.8em;
 }
-.main-container{
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  align-items: center;
-}
-.container{
-  padding: 20px 150px;
-  display: flex;
-  justify-content: center;
-}
 form{
   display: flex;
   width: auto;
@@ -160,4 +149,96 @@ form{
   display: flex;
   justify-content: center;
   align-items: center;
+}
+/* main */
+.main-container{
+  display: flex;
+  flex-direction: column;
+  text-align: justify;
+  margin: 10px 20vw;
+}
+.ab{
+  display: flex;
+  flex-direction: row;
+}
+.ab p{
+  width: auto;
+  height: auto;
+  font-size: 1.4em;
+}
+.dbTitles{
+  display: flex;
+  flex-direction: column;
+}
+.db{
+  display: flex;
+  flex-direction: row;
+  margin-bottom: 5vw;
+}
+.db p{
+  width: auto;
+  height: auto;
+  font-size: 1.4em;
+}
+.main-title{
+  margin: 3.5vw 0;
+  font-size: 2.5em;
+}
+.aboutPlat{
+  margin-bottom: 2vw;
+  font-size: 2em;
+}
+.databaseTopic{
+  margin-top:3.5vw;
+  font-size: 2em;
+}
+.NCBI{
+  margin: 2vw 0;
+  font-size: 1.6em;
+}
+/* footer */
+footer{
+  text-align: center;
+  color: #999;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.footer-info{
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+.footer-topics{
+  margin: 0 10px;
+  width: 200px;
+  align-items: center;
+}
+.footer-topics hr{
+  width: 70%;
+  margin: .3vw auto;
+}
+.link-footer-topics{
+  color: #999;
+}
+.link-footer-topics:hover{
+  cursor: pointer;
+  color: #797979;
+}
+.align-logo-and-name{
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+}
+.align-logo-and-name img{
+  width: 20px;
+  height: 20px;
+}
+.link-footer{
+  color: #444444;
+}
+.copyright{
+  margin-top: 1vw;
 }
