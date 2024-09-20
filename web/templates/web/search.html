@@ -67,7 +67,7 @@
             <div class="icon"><a href="/vanda/about">About</a></div>
             <div class="icon"><a href="https://github.com/riccardoalv/dbNGEN" target="_blank">Github<i class="fa-brands fa-github"></i></a></div>
           </div>
-        </nav> 
+        </nav>
       </div>
       <div class="search-main">
         <div class="search">
@@ -80,6 +80,7 @@
     </header>
     <div class="container mt-5">
       {% if search_response %}
+        <button id="downloadJsonBtn">Download JSON</button>
         <h3 id="snp-counter">{{ num_items }} SNP founds</h3>
         <div class="principal">
           <div class="filter-main">
@@ -171,6 +172,34 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
     <script>
+      document.getElementById('downloadJsonBtn').addEventListener('click', async function() {
+        const url = 'http://computacao.unir.br/vanda';
+        let u = window.location.href;
+        console.log(u)
+        u = u.substring(url.length);
+        u = url + '/api/' + u
+        console.log(u)
+
+        try {
+          const response = await fetch(u);
+          const data = await response.json();
+
+          const jsonStr = JSON.stringify(data, null, 2);
+          const blob = new Blob([jsonStr], { type: 'application/json' });
+          const blobUrl = URL.createObjectURL(blob);
+
+          const link = document.createElement('a');
+          link.href = blobUrl;
+          link.download = 'data.json';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(blobUrl);
+        } catch (error) {
+          console.error('Error fetching the JSON data:', error);
+          alert('An error occurred while downloading the JSON file.');
+        }
+      });
       document.querySelectorAll('#filter-snp, #filter-gene, #filter-mutation, #filter-np, #filter-nc, #filter-nm').forEach(input => {
         input.addEventListener('input', filterTable);
       });
