@@ -142,6 +142,20 @@ input[type="text"]:focus {
 .bar-button i{
   font-size: 20px;
 }
+.downloadJsonBtn{
+  float: right;
+  height: 35px;
+  background: #36802D;
+  margin-right: 7.5vw;
+  border: solid 1px black;
+  color: white;
+  padding: 5px;
+  border-radius: 5px;
+}
+.downloadJsonBtn:hover{
+  cursor: pointer;
+  background: #77AB59;
+}
 .show-items{
   display: flex;
   width: 100%;
