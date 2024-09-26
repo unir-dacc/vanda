@@ -142,7 +142,7 @@ input[type="text"]:focus {
 .bar-button i{
   font-size: 20px;
 }
-.downloadJsonBtn{
+#downloadJsonBtn{
   float: right;
   height: 35px;
   background: #36802D;
