@@ -152,7 +152,7 @@ input[type="text"]:focus {
   padding: 5px;
   border-radius: 5px;
 }
-.downloadJsonBtn:hover{
+#downloadJsonBtn:hover{
   cursor: pointer;
   background: #77AB59;
 }
