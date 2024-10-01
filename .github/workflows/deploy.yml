@@ -22,8 +22,5 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-docker-
 
-    - name: Docker down
-      run: docker compose down
-
     - name: Build and start Docker containers
       run: docker compose up --build -d
