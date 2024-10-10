@@ -23,9 +23,11 @@
     }
 
     .table-auto {
+      width: 100%;
       table-layout: auto;
       overflow: hidden;
       padding-right: 6vh;
+      border-collapse: collapse;
     }
 
     .hover-bg {
@@ -45,6 +47,7 @@
     }
     .py-2{
       text-align: center;
+      padding: 8px;
     }
   </style>
 
@@ -121,7 +124,7 @@
               </thead>
               <tbody id="referenciaContent">
                 {% for item in search_response %}
-                  <tr class="hover-bg">
+                  <tr class="hover-bg" style="border-bottom: solid 1px black;">
                     <td class="py-2 px-4 border-bottom break-words">
                       <a href="./snp/{{item.0|slice:"2:"}}">
                         {{ item.0 }}
