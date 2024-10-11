@@ -146,7 +146,7 @@ input[type="text"]:focus {
   float: right;
   height: 35px;
   background: #36802D;
-  margin-right: 7.5vw;
+  margin-right: 2.5vw;
   border: solid 1px black;
   color: white;
   padding: 5px;
@@ -162,8 +162,7 @@ input[type="text"]:focus {
   max-width: 100%;
   justify-content: center;
   flex-direction: column;
-  align-items: left;
-  margin-left: 2.5vw;
+  margin: 0 2.5vw;
   overflow-x: auto;
 }
 table{

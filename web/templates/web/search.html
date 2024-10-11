@@ -16,6 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/vanda/{% static 'web/searchStyle.css' %}">
     <script src="/vanda/{% static 'web/script.js' %}"></script>
+    <script src="/vanda/{% static 'web/selectTables.js' %}"></script>
   </head>
   <style>
     .min-w-full {
@@ -97,56 +98,79 @@
                 <label for="multipleGenes">Multiple Genes</label>
               </div>
             </div>
+            <h3 style="margin-top: 1.5vw;">Select your tables</h3>
+            <div class="align-filter">
+              <div class="filters">
+                <input type="checkbox" name="Protein" id="protein-checkbox" checked>
+                <label for="Protein">Protein</label>
+              </div>
+              <div class="filters">
+                <input type="checkbox" name="Genomic" id="genomic-checkbox" checked>
+                <label for="Genomic">Genomic</label>
+              </div>
+              <div class="filters">
+                <input type="checkbox" name="Genomic_ID" id="genomicId-checkbox">
+                <label for="Genomic_ID">Genomic ID</label>
+              </div>
+              <div class="filters">
+                <input type="checkbox" name="Genomic_mutation" id="Genomic_mutation">
+                <label for="Genomic_mutation">Genomic mutation</label>
+              </div>
+              <div class="filters">
+                <input type="checkbox" name="mRNA" id="mRNA">
+                <label for="mRNA">mRNA</label>
+              </div>
+            </div>
           </div>
           <div class="show-items">
             <table class="table table-hover min-w-full table-auto" >
               <thead>
                 <tr>
-                  <th scope="col">SNP</th>
-                  <th scope="col">dbSNP</th>
-                  <th scope="col">Gene</th>
-                  <th scope="col">Mutation</th>
-                  <th scope="col">Posição</th>
-                  <th scope="col">Protein</th>
-                  <th scope="col">Genomic</th>
-                  <th scope="col">mRNA</th>
+                  <th scope="col" id="dbsnp-column">dbSNP</th>
+                  <th scope="col" id="snp-column">SNP</th>
+                  <th scope="col" id="gene-column">Gene</th>
+                  <th scope="col" id="mutation-column">Mutation</th>
+                  <th scope="col" id="protein-column">Protein</th>
+                  <th scope="col" id="genomic-column">Genomic</th>
+                  <th scope="col" id="mrna-column">mRNA</th>
+                  <th scope="col" id="position-column">Position</th>
                 </tr>
                 <tr>
-                  <th><input type="text" class="form-control" id="filter-snp"></th>
                   <th></th>
+                  <th><input type="text" class="form-control" id="filter-snp"></th>
                   <th><input type="text" class="form-control" id="filter-gene"></th>
                   <th><input type="text" class="form-control" id="filter-mutation"></th>
-                  <th></th>
-                  <th><input type="text" class="form-control" id="filter-np"></th>
-                  <th><input type="text" class="form-control" id="filter-nc"></th>
+                  <th id="protein-th"><input type="text" class="form-control" id="filter-np"></th>
+                  <th id="genomic-th"><input type="text" class="form-control" id="filter-nc"></th>
                   <th><input type="text" class="form-control" id="filter-nm"></th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody id="referenciaContent">
                 {% for item in search_response %}
                   <tr class="hover-bg" style="border-bottom: solid 1px black;">
-                    <td class="py-2 px-4 border-bottom break-words">
-                      <a href="./snp/{{item.0|slice:"2:"}}">
-                        {{ item.0 }}
-                      </a>
-                    </td>
-                    <td class="py-2 px-4 border-bottom break-words">
+                    <td class="py-2 px-4 border-bottom break-words" id="dbsnp-td"><!--DBSNP-->
                       <a href="https://www.ncbi.nlm.nih.gov/snp/{{ item.0 }}" target="_blank" rel="noopener noreferrer">
                         <img src="/vanda/{% static 'web/NIH_Logo.png' %}" alt="NCBI Logo" class="mr-3" style="width: 40px;">
                       </a>
                     </td>
-                    <td class="py-2 px-4 ">{{ item.4|join:' ' }}</td>
-                    <td class="py-2 px-4 border-bottom break-words">{{ item.3 }}</td>
-                    <td class="py-2 px-4 ">{{ item.2 }}</td>
-                    <td class="py-2 px-4 border-bottom break-words">
+                    <td class="py-2 px-4 border-bottom break-words" id="snp-td"><!--SNP-->
+                      <a href="./snp/{{item.0|slice:"2:"}}">
+                        {{ item.0 }}
+                      </a>
+                    </td>
+                    <td class="py-2 px-4" id="gene-td">{{ item.4|join:' ' }}</td><!--Gene-->
+                    <td class="py-2 px-4 border-bottom break-words" id="mutation-td">{{ item.3 }}</td><!--Mutation-->
+                    <td class="py-2 px-4 border-bottom break-words protein-td"><!--Protein-->
                       {{ item.5.0|join:' ' }}
                     </td>
-                    <td class="py-2 px-4 border-bottom break-words">
+                    <td class="py-2 px-4  break-words genomic-td"><!--Genomic-->
                       {{ item.5.1|join:' ' }}
                     </td>
-                    <td class="py-2 px-4 border-bottom break-words">
+                    <td class="py-2 px-4 break-words" style="word-break: break-word;"><!--mRNA-->
                       {{ item.5.2|join:' ' }}
                     </td>
+                    <td class="py-2 px-4 ">{{ item.2 }}</td><!--Position-->
                   </tr>
                 {% endfor %}
               </tbody>
@@ -238,6 +262,5 @@
         });
       }
     </script>
-    <script src="/vanda/{% static 'web/scriptCollapsible.js' %}"></script>
   </body>
 </html>
