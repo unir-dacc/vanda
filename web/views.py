@@ -1,3 +1,4 @@
+import re
 from django.core.handlers.asgi import HttpRequest
 from django.shortcuts import redirect, render
 from django.http import JsonResponse
@@ -48,6 +49,17 @@ def search(request):
     for i in range(len(data)):
         data[i][4] = data[i][4].split()
         data[i].append(hgvs[i])
+
+        protein_matches = re.findall(r"(?P<id>\w+_\d+\.\d+):p\.(?P<mut>\w+\d+\w+)", ' '.join(hgvs[i][0]) if hgvs[i][0] else '')
+        genomic_matches = re.findall(r"(?P<id>\w+_\d+\.\d+):g\.(?P<mut>\d+\w+>\w+)", ' '.join(hgvs[i][1]) if hgvs[i][1] else '')
+        mrna_matches = re.findall(r"(?P<id>\w+_\d+\.\d+):c\.(?P<mut>\d+\w+>\w+)", ' '.join(hgvs[i][2]) if hgvs[i][2] else '')
+
+        # Adicionando listas de mutações ao item
+        data[i].append({
+            'proteins': [{'id': p[0], 'mutation': p[1]} for p in protein_matches],
+            'genomics': [{'id': g[0], 'mutation': g[1]} for g in genomic_matches],
+            'mrnas': [{'id': m[0], 'mutation': m[1]} for m in mrna_matches]
+        })
 
     if single_gene:
         data = list(filter(lambda x: len(x[4]) == 1, data))
