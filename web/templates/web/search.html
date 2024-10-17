@@ -14,9 +14,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'web/searchStyle.css' %}">
-    <script src="{% static 'web/script.js' %}"></script>
-    <script src="{% static 'web/selectTables.js' %}"></script>
+    <link rel="stylesheet" href="/vanda/{% static 'web/searchStyle.css' %}">
+    <script src="/vanda/{% static 'web/script.js' %}"></script>
+    <script src="/vanda/{% static 'web/selectTables.js' %}"></script>
   </head>
   <style>
     .min-w-full {
@@ -57,7 +57,7 @@
       <div class="main-cabecalho">
         <div class="icons separate"></div>
         <nav class="cabecalho-icon">
-          <div class="l-side"><a href=""><div class="logo">
+          <div class="l-side"><a href="/vanda/"><div class="logo">
             <div class="logo-circle">
               <img src="{% static 'web/vandaLogo.svg' %}" id="logo-img">
             </div>
@@ -67,14 +67,14 @@
           </div></a>
           </div>
           <div class="r-side">
-            <div class="icon"><a href="about">About</a></div>
+            <div class="icon"><a href="/vanda/about">About</a></div>
             <div class="icon"><a href="https://github.com/riccardoalv/dbNGEN" target="_blank">Github<i class="fa-brands fa-github"></i></a></div>
           </div>
         </nav>
       </div>
       <div class="search-main">
         <div class="search">
-          <form action="search" method="get" class="forms">
+          <form action="/vanda/search" method="get" class="forms">
             <input type="text" name="q" class="bar" placeholder="rs12345, rs268, BCO1, TP53...">
             <button type="submit" class="bar-button"><i class="fa-solid fa-magnifying-glass"></i></button>
           </form>
@@ -158,7 +158,7 @@
                   <tr class="hover-bg" style="border-bottom: solid 1px black;">
                     <td class="py-2 px-4 border-bottom break-words" id="dbsnp-td"><!--DBSNP-->
                       <a href="https://www.ncbi.nlm.nih.gov/snp/{{ item.0 }}" target="_blank" rel="noopener noreferrer">
-                        <img src="{% static 'web/NIH_Logo.png' %}" alt="NCBI Logo" class="mr-3" style="width: 40px;">
+                        <img src="/vanda/{% static 'web/NIH_Logo.png' %}" alt="NCBI Logo" class="mr-3" style="width: 40px;">
                       </a>
                     </td>
                     <td class="py-2 px-4 border-bottom break-words" id="snp-td"><!--SNP-->
@@ -222,7 +222,7 @@
         </nav>
       {% else %}
         <div class="no-items-found">
-          <img src="{% static 'web/no-items-found.png' %}"/>
+          <img src="/vanda/{% static 'web/no-items-found.png' %}"/>
           <p id="not-found">0 snps found</p>
         </div>
       {% endif %}
