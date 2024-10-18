@@ -157,11 +157,8 @@ input[type="text"]:focus {
   background: #77AB59;
 }
 .show-items{
-  display: flex;
   width: 100%;
   max-width: 100%;
-  justify-content: center;
-  flex-direction: column;
   margin: 0 2.5vw;
   overflow-x: auto;
 }

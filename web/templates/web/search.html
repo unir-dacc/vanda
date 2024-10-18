@@ -101,24 +101,28 @@
             <h3 style="margin-top: 1.5vw;">Select your tables</h3>
             <div class="align-filter">
               <div class="filters">
-                <input type="checkbox" name="Protein" id="protein-checkbox" checked>
-                <label for="Protein">Protein</label>
+                <input type="checkbox" name="proteinID" id="protein-id-checkbox" checked>
+                <label for="proteinID">Protein ID</label>
               </div>
               <div class="filters">
-                <input type="checkbox" name="Genomic" id="genomic-checkbox" checked>
-                <label for="Genomic">Genomic</label>
+                <input type="checkbox" name="proteinMutation" id="protein-mutation-checkbox" checked>
+                <label for="proteinMutation">Protein Mutation</label>
               </div>
               <div class="filters">
-                <input type="checkbox" name="Genomic_ID" id="genomicId-checkbox">
-                <label for="Genomic_ID">Genomic ID</label>
+                <input type="checkbox" name="genomicID" id="genomic-id-checkbox" checked>
+                <label for="genomicID">Genomic ID</label>
               </div>
               <div class="filters">
-                <input type="checkbox" name="Genomic_mutation" id="Genomic_mutation">
-                <label for="Genomic_mutation">Genomic mutation</label>
+                <input type="checkbox" name="genomicMutation" id="genomic-mutation-checkbox" checked>
+                <label for="genomicMutation">Genomic Mutation</label>
               </div>
               <div class="filters">
-                <input type="checkbox" name="mRNA" id="mRNA">
-                <label for="mRNA">mRNA</label>
+                <input type="checkbox" name="mrnaID" id="mrna-id-checkbox" checked>
+                <label for="mrnaID">mRNA ID</label>
+              </div>
+              <div class="filters">
+                <input type="checkbox" name="mrnaMutation" id="mrna-mutation-checkbox" checked>
+                <label for="mrnaMutation">mRNA Mutation</label>
               </div>
             </div>
           </div>
@@ -140,15 +144,15 @@
                 </tr>
                 <tr>
                   <th></th>
-                  <th><input type="text" class="form-control" id="filter-snp"></th>
-                  <th><input type="text" class="form-control" id="filter-gene"></th>
-                  <th><input type="text" class="form-control" id="filter-mutation"></th>
-                  <th><input type="text" class="form-control" id="filter-protein-id"></th>
-                  <th><input type="text" class="form-control" id="filter-protein-mutation"></th>
-                  <th><input type="text" class="form-control" id="filter-genomic-id"></th>
-                  <th><input type="text" class="form-control" id="filter-genomic-mutation"></th>
-                  <th><input type="text" class="form-control" id="filter-mrna-id"></th>
-                  <th><input type="text" class="form-control" id="filter-mrna-mutation"></th>
+                  <th id="snp-th"><input type="text" class="form-control" id="filter-snp"></th>
+                  <th id="gene-th"><input type="text" class="form-control" id="filter-gene"></th>
+                  <th id="mutation-th"><input type="text" class="form-control" id="filter-mutation"></th>
+                  <th id="protein-id-th"><input type="text" class="form-control" id="filter-protein-id"></th>
+                  <th id="protein-mutation-th"><input type="text" class="form-control" id="filter-protein-mutation"></th>
+                  <th id="genomic-id-th"><input type="text" class="form-control" id="filter-genomic-id"></th>
+                  <th id="genomic-mutation-th"><input type="text" class="form-control" id="filter-genomic-mutation"></th>
+                  <th id="mrna-id-th"><input type="text" class="form-control" id="filter-mrna-id"></th>
+                  <th id="mrna-mutation-th"><input type="text" class="form-control" id="filter-mrna-mutation"></th>
                   
                   <th></th>
                 </tr>
@@ -156,48 +160,48 @@
               <tbody id="referenciaContent">
                 {% for item in search_response %}
                   <tr class="hover-bg" style="border-bottom: solid 1px black;">
-                    <td class="py-2 px-4 border-bottom break-words" id="dbsnp-td"><!--DBSNP-->
+                    <td class="py-2 px-4 dbsnp-td"><!--DBSNP-->
                       <a href="https://www.ncbi.nlm.nih.gov/snp/{{ item.0 }}" target="_blank" rel="noopener noreferrer">
                         <img src="/vanda/{% static 'web/NIH_Logo.png' %}" alt="NCBI Logo" class="mr-3" style="width: 40px;">
                       </a>
                     </td>
-                    <td class="py-2 px-4 border-bottom break-words" id="snp-td"><!--SNP-->
+                    <td class="py-2 px-4 snp-td"><!--SNP-->
                       <a href="./snp/{{item.0|slice:"2:"}}">
                         {{ item.0 }}
                       </a>
                     </td>
-                    <td class="py-2 px-4" id="gene-td"><!--Gene-->
+                    <td class="py-2 px-4 gene-td"><!--Gene-->
                       {{ item.4|join:' ' }}
                     </td>
-                    <td class="py-2 px-4 border-bottom break-words" id="mutation-td"><!--Mutation-->
+                    <td class="py-2 px-4 mutation-td"><!--Mutation-->
                       {{ item.3 }}
                     </td>
-                    <td class="py-2 px-4 border-bottom break-words" id="protein_id">
+                    <td class="py-2 px-4 protein-id-td">
                       {% for protein in item.6.proteins %}
                         {{ protein.id }}<br>
                       {% endfor %}
                     </td>
-                      <td class="py-2 px-4 border-bottom break-words" id="protein_mutation">
+                      <td class="py-2 px-4 protein-mutation-td">
                       {% for protein in item.6.proteins  %}  
                         {{ protein.mutation }}<br>
                       {% endfor %}
                     </td>
-                    <td class="py-2 px-4 genomic-td"><!--Genomic-->
+                    <td class="py-2 px-4 genomic-id-td"><!--Genomic ID-->
                       {% for genomic in item.6.genomics %}
                         {{ genomic.id }}<br>
                       {% endfor %}
                     </td>
-                    <td class="py-2 px-4 genomic-td"><!--Genomic-->
+                    <td class="py-2 px-4 genomic-mutation-td"><!--Genomic mutation-->
                       {% for genomic in item.6.genomics %}
                         {{ genomic.mutation }}<br>
                       {% endfor %}
                     </td>
-                    <td class="py-2 px-4"><!--mRNA-->
+                    <td class="py-2 px-4 mrna-id-td"><!--mRNA ID-->
                       {% for mrna in item.6.mrnas %}
                         {{ mrna.id }}<br>
                       {% endfor %}
                     </td>
-                    <td class="py-2 px-4"><!--mRNA-->
+                    <td class="py-2 px-4 mrna-mutation-td"><!--mRNA mutation-->
                       {% for mrna in item.6.mrnas %}
                         {{ mrna.mutation }}
                       {% endfor %}

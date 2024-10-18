@@ -1,54 +1,100 @@
 function verifCheck(){
     // Protein
-    const protein = document.getElementById('protein-checkbox');
-    var protein_column = document.getElementById('protein-column');
-    var protein_filter = document.getElementById('filter-np');
-    var protein_td = document.getElementsByClassName('protein-td');
-    var protein_th = document.getElementById('protein-th');
-    // Genomic
-    const genomic = document.getElementById('genomic-checkbox');
-    var genomic_column = document.getElementById('genomic-column');
-    var genomic_filter = document.getElementById('filter-nc');
-    var genomic_td = document.getElementsByClassName('genomic-td');
-    var genomic_th = document.getElementById('genomic-th');
+    function elementByID(id){
+        return document.getElementById(id);
+    }
+    function elementsByClass(className){
+        return document.getElementsByClassName(className);
+    }
 
-    protein.addEventListener('change', function() {
-        if (protein.checked) {
-            // Ocultar as variáveis relacionadas à proteína
-            protein_column.style.display = '';
-            protein_filter.style.display = '';
-            for (let i = 0; i < protein_td.length; i++) {
-                protein_td[i].style.display = '';
-            }
-            protein_th.style.display = '';
-        } else {
-            // Exibir as variáveis relacionadas à proteína
-            protein_column.style.display = 'none';
-            protein_filter.style.display = 'none';
-            for (let i = 0; i < protein_td.length; i++) {
-                protein_td[i].style.display = 'none';
-            }
-            protein_th.style.display = 'none';
+    function toggleVisibility(checkbox, colummn, filter, tdElement,thElement){
+        const displayStyle = checkbox.checked ? '' : 'none';
+
+        colummn.style.display = displayStyle;
+        filter.style.display = displayStyle;
+        thElement.style.display = displayStyle;
+        for(let i = 0; i < tdElement.length;i++){
+            tdElement[i].style.display = displayStyle;
         }
+    }
+    
+    // Protein ID
+    const proteinID = [
+        elementByID('protein-id-checkbox'),
+        elementByID('protein-id'),
+        elementByID('filter-protein-id'),
+        elementsByClass('protein-id-td'),
+        elementByID('protein-id-th')
+    ]
+
+    // Protein Mutation
+    const proteinMutation = [
+        elementByID('protein-mutation-checkbox'),
+        elementByID('protein-mutation'),
+        elementByID('filter-protein-mutation'),
+        elementsByClass('protein-mutation-td'),
+        elementByID('protein-mutation-th')
+    ]
+
+    // Genomic ID
+    const genomicID = [
+        elementByID('genomic-id-checkbox'),
+        elementByID('genomic-id'),
+        elementByID('filter-genomic-id'),
+        elementsByClass('genomic-id-td'),
+        elementByID('genomic-id-th')
+    ]
+
+    // Genomic Mutation
+    const genomicMutation = [
+        elementByID('genomic-mutation-checkbox'),
+        elementByID('genomic-mutation'),
+        elementByID('filter-genomic-mutation'),
+        elementsByClass('genomic-mutation-td'),
+        elementByID('genomic-mutation-th')
+    ]
+
+    // mRNA ID
+    const mrnaID = [
+        elementByID('mrna-id-checkbox'),
+        elementByID('mrna-id'),
+        elementByID('filter-mrna-id'),
+        elementsByClass('mrna-id-td'),
+        elementByID('mrna-id-th')
+    ]
+
+    // mRNA Mutation
+    const mrnaMutation = [
+        elementByID('mrna-mutation-checkbox'),
+        elementByID('mrna-mutation'),
+        elementByID('filter-mrna-mutation'),
+        elementsByClass('mrna-mutation-td'),
+        elementByID('mrna-mutation-th')
+    ]
+
+
+    proteinID[0].addEventListener('change', function() {
+        toggleVisibility(proteinID[0],proteinID[1],proteinID[2],proteinID[3],proteinID[4]);
     });
-    genomic.addEventListener('change', function() {
-        if (genomic.checked) {
-            // Ocultar as variáveis relacionadas à proteína
-            genomic_column.style.display = '';
-            genomic_filter.style.display = '';
-            for (let i = 0; i < genomic_td.length; i++) {
-                genomic_td[i].style.display = '';
-            }
-            genomic_th.style.display = '';
-        } else {
-            // Exibir as variáveis relacionadas à proteína
-            genomic_column.style.display = 'none';
-            genomic_filter.style.display = 'none';
-            for (let i = 0; i < genomic_td.length; i++) {
-                genomic_td[i].style.display = 'none';
-            }
-            genomic_th.style.display = 'none';
-        }
+
+    proteinMutation[0].addEventListener('change', function(){
+        toggleVisibility(proteinMutation[0],proteinMutation[1],proteinMutation[2],proteinMutation[3],proteinMutation[4]);
+    });
+
+    genomicID[0].addEventListener('change', function(){
+        toggleVisibility(genomicID[0],genomicID[1],genomicID[2],genomicID[3],genomicID[4]);
+    });
+
+    genomicMutation[0].addEventListener('change', function(){
+        toggleVisibility(genomicMutation[0],genomicMutation[1],genomicMutation[2],genomicMutation[3],genomicMutation[4]);
+    });
+
+    mrnaID[0].addEventListener('change', function(){
+        toggleVisibility(mrnaID[0],mrnaID[1],mrnaID[2],mrnaID[3],mrnaID[4]);
+    });
+
+    mrnaMutation[0].addEventListener('change', function(){
+        toggleVisibility(mrnaMutation[0],mrnaMutation[1],mrnaMutation[2],mrnaMutation[3],mrnaMutation[4]);
     });
   }
 
