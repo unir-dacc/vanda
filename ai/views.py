@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from ai.summarizer import summary
 from ai.tokens import tokenizer
-from web import services
+import entrez.services as ncbi
 
 
 def remove_duplicates(dicts, key):
@@ -44,8 +44,8 @@ def render_topics(articles):
 
 
 def snp_page(request, snpid):
-    articles = services.get_abstracts_by_snp(snpid)
-    gene_name = services.search_snp("rs" + snpid)["data"][0][4].split()
+    articles = ncbi.get_abstracts_by_snp(snpid)
+    gene_name = ncbi.search_snp("rs" + snpid)["data"][0][4].split()
 
     topics = render_topics(articles)
 
@@ -57,13 +57,13 @@ def gene_page(request, geneid):
     snp_to_pubmed = {}
 
     try:
-        abstracts, snp_to_pubmed = services.get_abstracts_by_gene(geneid)
+        abstracts, snp_to_pubmed = ncbi.get_abstracts_by_gene(geneid)
     except:
         print(f"Gene {geneid} has no data available")
 
     topics = render_topics(abstracts)
 
-    description = services.get_summary_of_gene(geneid)
+    description = ncbi.get_summary_of_gene(geneid)
     snp_topics = {}
 
     for k, v in snp_to_pubmed.items():
@@ -88,6 +88,6 @@ def gene_page(request, geneid):
     for k in snp_topics:
         snp_topics[k] = remove_duplicates(snp_topics[k], "pmid")
 
-    description = services.get_summary_of_gene(geneid)
+    description = ncbi.get_summary_of_gene(geneid)
 
     return render(request, 'web/gene.html', {"gene_name": geneid, "data": topics, "description": description, "snp_topics": snp_topics})

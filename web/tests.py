@@ -1,8 +1,7 @@
 from django.test import TestCase, Client
 from django.test.client import resolve
 from django.urls import reverse
-
-from . import services
+import entrez.services as ncbi
 
 default_snp = "268"
 snp_response = ['rs268', '8', '19956017', 'A/G', 'LPL']
@@ -14,13 +13,13 @@ hgvs_snp_response = ['NC_000008.11:g.19956018A>G',
                      'NP_000228.1:p.Asn318Ser'
                      ]
 
-snp = services.SnpData(default_snp)
+snp = ncbi.SnpData(default_snp)
 
 
 class ServicesTestCase(TestCase):
 
     def test_get_by_name(self):
-        response = services.search_snp("rs" + default_snp)
+        response = ncbi.search_snp("rs" + default_snp)
 
         self.assertListEqual(response["data"][0], snp_response)
 

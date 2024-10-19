@@ -2,8 +2,7 @@ from django.core.handlers.asgi import HttpRequest
 from django.shortcuts import redirect, render
 from django.http import JsonResponse
 from django.core.paginator import Paginator
-
-from . import services
+import entrez.services as ncbi
 
 PAGE_SIZE = 20
 
@@ -21,7 +20,7 @@ def search(request):
     response = []
     num_items = 0
 
-    response = services.search_snp(query)
+    response = ncbi.search_snp(query)
     num_items = response["num_items"]
 
     single_gene = request.GET.get("single_gene")
@@ -36,7 +35,7 @@ def search(request):
     hgvs = []
 
     if snps:
-        hgvs_data = services.SnpData(snps).get_snp_hgvs()
+        hgvs_data = ncbi.SnpData(snps).get_snp_hgvs()
 
         for snp in hgvs_data:
             p = list(filter(lambda x: x[1:2] == "P", snp))
@@ -81,23 +80,24 @@ def search_api(request):
 
 def gene_abstracts(request, geneid=None):
 
-    abstracts = services.get_abstracts_by_gene(geneid)
+    abstracts = ncbi.get_abstracts_by_gene(geneid)
 
     return JsonResponse({"articles": abstracts})
 
 
 def snp_abstracts(request, snpid=None):
-    abstracts = services.get_abstracts_by_snp(snpid)
+    abstracts = ncbi.get_abstracts_by_snp(snpid)
 
     return JsonResponse({"articles": abstracts})
 
 
 def snp_hgvs(request, snpid=None):
-    snp = services.SnpData(snpid)
+    snp = ncbi.SnpData(snpid)
 
     data = {'hgvs': snp.get_snp_hgvs()}
 
     return JsonResponse(data)
+
 
 def about(request):
     return render(request, 'web/about.html')

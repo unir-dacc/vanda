@@ -2,7 +2,7 @@ from ai.summarizer import summary
 from ai.tokens import tokenizer
 from django.test import TestCase, Client
 
-from web import services
+import entrez.services as ncbi
 
 default_snp = "268"
 default_snp_pmid = "8541837"
@@ -17,7 +17,7 @@ default_gene_abstract = "The enzyme carotenoid 15,15'-monooxygenase (CMO1) catal
 
 class ServicesTestCase(TestCase):
     def test_get_abstracts_by_snp(self):
-        articles = services.get_abstracts_by_snp(default_snp)
+        articles = ncbi.get_abstracts_by_snp(default_snp)
 
         pmids = []
 
@@ -27,7 +27,7 @@ class ServicesTestCase(TestCase):
         self.assertIn(default_snp_pmid, pmids)
 
     def test_get_abstracts_by_gene(self):
-        articles, snp_to_pubmed = services.get_abstracts_by_gene(default_gene)
+        articles, snp_to_pubmed = ncbi.get_abstracts_by_gene(default_gene)
 
         pmids = []
 
