@@ -19,7 +19,6 @@ def remove_duplicates(dicts, key):
 
 
 def render_topics(articles):
-
     for item in articles:
         item["tokens"] = tokenizer(item["abstract"])
 
@@ -36,7 +35,7 @@ def render_topics(articles):
                     {
                         "pmid": article["pmid"],
                         "title": article["title"],
-                        "abstract": summary(article["abstract"])
+                        "abstract": summary(article["abstract"]),
                     }
                 )
 
@@ -49,17 +48,18 @@ def snp_page(request, snpid):
 
     topics = render_topics(articles)
 
-    return render(request, 'web/snp.html', {"snp_name": "rs" + snpid, "gene_name": gene_name, "data": topics})
+    return render(
+        request,
+        "web/snp.html",
+        {"snp_name": "rs" + snpid, "gene_name": gene_name, "data": topics},
+    )
 
 
 def gene_page(request, geneid):
     abstracts = []
     snp_to_pubmed = {}
 
-    try:
-        abstracts, snp_to_pubmed = ncbi.get_abstracts_by_gene(geneid)
-    except:
-        print(f"Gene {geneid} has no data available")
+    abstracts, snp_to_pubmed = ncbi.get_abstracts_by_gene(geneid)
 
     topics = render_topics(abstracts)
 
@@ -72,22 +72,35 @@ def gene_page(request, geneid):
                 for article in a:
                     if i == article["pmid"]:
                         if k in snp_topics:
-                            snp_topics[k].append({
-                                "pmid": article["pmid"],
-                                "title": article["title"],
-                                "abstract": article["abstract"]
-                            })
+                            snp_topics[k].append(
+                                {
+                                    "pmid": article["pmid"],
+                                    "title": article["title"],
+                                    "abstract": article["abstract"],
+                                }
+                            )
                         else:
                             snp_topics[k] = []
-                            snp_topics[k].append({
-                                "pmid": article["pmid"],
-                                "title": article["title"],
-                                "abstract": article["abstract"]
-                            })
+                            snp_topics[k].append(
+                                {
+                                    "pmid": article["pmid"],
+                                    "title": article["title"],
+                                    "abstract": article["abstract"],
+                                }
+                            )
 
     for k in snp_topics:
         snp_topics[k] = remove_duplicates(snp_topics[k], "pmid")
 
     description = ncbi.get_summary_of_gene(geneid)
 
-    return render(request, 'web/gene.html', {"gene_name": geneid, "data": topics, "description": description, "snp_topics": snp_topics})
+    return render(
+        request,
+        "web/gene.html",
+        {
+            "gene_name": geneid,
+            "data": topics,
+            "description": description,
+            "snp_topics": snp_topics,
+        },
+    )

@@ -3,6 +3,7 @@ import logging
 import os
 from Bio import Entrez
 from dotenv import load_dotenv
+import sys
 
 load_dotenv()
 
@@ -17,8 +18,7 @@ def search_snp(query):
         result = response.json()
         return {"num_items": result[0], "data": result[3]}
     else:
-        logging.error(
-            f"Response code on services.search_snp: {response.status_code}")
+        logging.error(f"Response code on services.search_snp: {response.status_code}")
         return {"num_items": 0, "data": []}
 
 
@@ -36,8 +36,11 @@ class SnpData:
             for item in self.data["DocumentSummarySet"]["DocumentSummary"]:
                 hgvs.append(item["DOCSUM"][5:].split("|")[0].split(","))
         else:
-            hgvs = self.data["DocumentSummarySet"]["DocumentSummary"][0]["DOCSUM"][5:].split("|")[
-                0].split(',')
+            hgvs = (
+                self.data["DocumentSummarySet"]["DocumentSummary"][0]["DOCSUM"][5:]
+                .split("|")[0]
+                .split(",")
+            )
         return hgvs
 
 
@@ -49,17 +52,16 @@ base_keywords = [
     "Diets",
 ]
 
-combinations_keywords = [
-    "Genetic Predisposition to Disease",
-    "Dietary Supplements",
-]
 
-filter_term = f' AND ({"[MeSH Terms] OR ".join(base_keywords)}) AND ({"[MeSH Terms] OR ".join(base_keywords + combinations_keywords)})'
+def format_mesh_terms(keywords):
+    return " OR ".join([f"{kw}[MeSH Terms]" for kw in keywords])
+
+
+filter_term = f" AND ({format_mesh_terms(base_keywords)})"
 
 
 def get_abstracts_by_gene(gene_id):
     term = f"{gene_id.upper()} AND (snp_pubmed_cited[Filter] OR snp_pubmed[Filter])"
-    abstracts = []
 
     with Entrez.esearch(db="snp", term=term, retmode="xml") as handle:
         snp_ids = Entrez.read(handle).get("IdList", [])
@@ -67,8 +69,7 @@ def get_abstracts_by_gene(gene_id):
     if not snp_ids:
         return [], {}
 
-    pubmed_ids = []
-    with Entrez.elink(dbfrom="snp", db="pubmed", id=snp_ids, retmode="xml") as handle:
+    with Entrez.elink(dbfrom="snp", db="pubmed", id=",".join(snp_ids)) as handle:
         pubmed_data = Entrez.read(handle)
 
     snp_to_pubmed = {}
@@ -77,40 +78,53 @@ def get_abstracts_by_gene(gene_id):
         for linkset_db in pubmed_item.get("LinkSetDb", []):
             for link in linkset_db.get("Link", []):
                 ids.append(link["Id"])
-                snp_to_pubmed.setdefault(
-                    pubmed_item["IdList"][0], []).append(link["Id"])
+                snp_to_pubmed.setdefault(pubmed_item["IdList"][0], []).append(
+                    link["Id"]
+                )
 
     if not ids:
         return [], {}
 
     filter_search = f'({" OR ".join(ids)})' + filter_term
 
+    pubmed_ids = []
     with Entrez.esearch(db="pubmed", term=filter_search, retmode="xml") as handle:
         pubmed_ids = Entrez.read(handle).get("IdList", [])
 
     if not pubmed_ids:
         return [], {}
 
-    with Entrez.efetch(db="pubmed", id=pubmed_ids, rettype="medline", retmode="xml") as handle:
+    with Entrez.efetch(
+        db="pubmed", id=pubmed_ids, rettype="medline", retmode="xml"
+    ) as handle:
         articles = Entrez.read(handle)
 
-    for article in articles['PubmedArticle']:
+    abstracts = []
+    for article in articles["PubmedArticle"]:
         if "Abstract" in article["MedlineCitation"]["Article"]:
-            abstracts.append({
-                "pmid": str(article["MedlineCitation"]["PMID"]),
-                "title": article["MedlineCitation"]["Article"]["ArticleTitle"],
-                "abstract": str(article["MedlineCitation"]["Article"]["Abstract"]["AbstractText"][0])
-            })
+            abstracts.append(
+                {
+                    "pmid": str(article["MedlineCitation"]["PMID"]),
+                    "title": article["MedlineCitation"]["Article"]["ArticleTitle"],
+                    "abstract": str(
+                        article["MedlineCitation"]["Article"]["Abstract"][
+                            "AbstractText"
+                        ][0]
+                    ),
+                }
+            )
 
     return abstracts, snp_to_pubmed
 
 
 def get_summary_of_gene(gene_id):
-    with Entrez.esearch(db="gene", term=gene_id, retmode="xml", sort="relevance") as handle:
+    with Entrez.esearch(
+        db="gene", term=gene_id, retmode="xml", sort="relevance"
+    ) as handle:
         gene_ids = Entrez.read(handle).get("IdList", [])
 
     if not gene_ids:
-        return ''
+        return ""
 
     with Entrez.esummary(db="gene", id=gene_ids[0]) as handle:
         result = Entrez.read(handle)
@@ -139,16 +153,24 @@ def get_abstracts_by_snp(snp_id):
     if not pubmed_ids:
         return []
 
-    with Entrez.efetch(db="pubmed", id=pubmed_ids, rettype="medline", retmode="xml") as handle:
+    with Entrez.efetch(
+        db="pubmed", id=pubmed_ids, rettype="medline", retmode="xml"
+    ) as handle:
         articles = Entrez.read(handle)
 
     abstracts = []
-    for article in articles['PubmedArticle']:
+    for article in articles["PubmedArticle"]:
         if "Abstract" in article["MedlineCitation"]["Article"]:
-            abstracts.append({
-                "pmid": str(article["MedlineCitation"]["PMID"]),
-                "title": article["MedlineCitation"]["Article"]["ArticleTitle"],
-                "abstract": str(article["MedlineCitation"]["Article"]["Abstract"]["AbstractText"][0])
-            })
+            abstracts.append(
+                {
+                    "pmid": str(article["MedlineCitation"]["PMID"]),
+                    "title": article["MedlineCitation"]["Article"]["ArticleTitle"],
+                    "abstract": str(
+                        article["MedlineCitation"]["Article"]["Abstract"][
+                            "AbstractText"
+                        ][0]
+                    ),
+                }
+            )
 
     return abstracts

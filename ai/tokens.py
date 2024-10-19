@@ -3,13 +3,11 @@ from transformers import AutoTokenizer, AutoModelForTokenClassification
 
 
 tokenizer = AutoTokenizer.from_pretrained("d4data/biomedical-ner-all")
-model = AutoModelForTokenClassification.from_pretrained(
-    "d4data/biomedical-ner-all")
+model = AutoModelForTokenClassification.from_pretrained("d4data/biomedical-ner-all")
 
-pipe = pipeline("ner", model=model, tokenizer=tokenizer,
-                aggregation_strategy="simple")
+pipe = pipeline("ner", model=model, tokenizer=tokenizer, aggregation_strategy="simple")
 
-characters = [',', '.', '!', '?', ';', '"', "'", " ", '(', ')']
+characters = [",", ".", "!", "?", ";", '"', "'", " ", "(", ")"]
 
 considerable_tokens = ["Disease_disorder"]
 
@@ -28,13 +26,13 @@ def tokenizer(text):
     tokens = list(filter(is_token_in_considerable_tokens, result))
 
     for item in tokens:
-        while text[item['start']] not in characters:
-            item['start'] -= 1
+        while text[item["start"]] not in characters:
+            item["start"] -= 1
 
-        while text[item['end']] not in characters:
-            item['end'] += 1
+        while text[item["end"]] not in characters:
+            item["end"] += 1
 
-        word = text[item['start'] + 1:item['end']].lower()
+        word = text[item["start"] + 1 : item["end"]].lower()
 
         if word not in words:
             words.append(word)
