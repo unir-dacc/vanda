@@ -5,7 +5,6 @@
   <head>
     <title>VANDA</title>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="https://dacc.unir.br/img/favicon.ico" type="image/x-icon"/>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -17,6 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/vanda/{% static 'web/searchStyle.css' %}">
     <script src="/vanda/{% static 'web/script.js' %}"></script>
+    <script src="/vanda/{% static 'web/selectTables.js' %}"></script>
   </head>
   <style>
     .min-w-full {
@@ -24,9 +24,11 @@
     }
 
     .table-auto {
+      width: 100%;
       table-layout: auto;
       overflow: hidden;
       padding-right: 6vh;
+      border-collapse: collapse;
     }
 
     .hover-bg {
@@ -46,6 +48,7 @@
     }
     .py-2{
       text-align: center;
+      padding: 8px;
     }
   </style>
 
@@ -95,56 +98,115 @@
                 <label for="multipleGenes">Multiple Genes</label>
               </div>
             </div>
+            <h3 style="margin-top: 1.5vw;">Select your tables</h3>
+            <div class="align-filter">
+              <div class="filters">
+                <input type="checkbox" name="proteinID" id="protein-id-checkbox" checked>
+                <label for="proteinID">Protein ID</label>
+              </div>
+              <div class="filters">
+                <input type="checkbox" name="proteinMutation" id="protein-mutation-checkbox" checked>
+                <label for="proteinMutation">Protein Mutation</label>
+              </div>
+              <div class="filters">
+                <input type="checkbox" name="genomicID" id="genomic-id-checkbox" checked>
+                <label for="genomicID">Genomic ID</label>
+              </div>
+              <div class="filters">
+                <input type="checkbox" name="genomicMutation" id="genomic-mutation-checkbox" checked>
+                <label for="genomicMutation">Genomic Mutation</label>
+              </div>
+              <div class="filters">
+                <input type="checkbox" name="mrnaID" id="mrna-id-checkbox" checked>
+                <label for="mrnaID">mRNA ID</label>
+              </div>
+              <div class="filters">
+                <input type="checkbox" name="mrnaMutation" id="mrna-mutation-checkbox" checked>
+                <label for="mrnaMutation">mRNA Mutation</label>
+              </div>
+            </div>
           </div>
           <div class="show-items">
-            <table class="table table-hover min-w-full table-auto">
+            <table class="table table-hover min-w-full table-auto" >
               <thead>
                 <tr>
-                  <th scope="col">SNP</th>
-                  <th scope="col">dbSNP</th>
-                  <th scope="col">Gene</th>
-                  <th scope="col">Mutation</th>
-                  <th scope="col">Posição</th>
-                  <th scope="col">Protein</th>
-                  <th scope="col">Genomic</th>
-                  <th scope="col">mRNA</th>
+                  <th scope="col" id="dbsnp-column">dbSNP</th>
+                  <th scope="col" id="snp-column">SNP</th>
+                  <th scope="col" id="gene-column">Gene</th>
+                  <th scope="col" id="mutation-column">Mutation</th>
+                  <th scope="col" id="protein-id">Protein ID</th>
+                  <th scope="col" id="protein-mutation">Protein Mutation</th>
+                  <th scope="col" id="genomic-id">Genomic ID</th>
+                  <th scope="col" id="genomic-mutation">Genomic Mutation</th>
+                  <th scope="col" id="mrna-id">mRNA ID</th>
+                  <th scope="col" id="mrna-mutation">mRNA Mutation</th>
+                  <th scope="col" id="position-column">Position</th>
                 </tr>
                 <tr>
-                  <th><input type="text" class="form-control" id="filter-snp"></th>
                   <th></th>
-                  <th><input type="text" class="form-control" id="filter-gene"></th>
-                  <th><input type="text" class="form-control" id="filter-mutation"></th>
+                  <th id="snp-th"><input type="text" class="form-control" id="filter-snp"></th>
+                  <th id="gene-th"><input type="text" class="form-control" id="filter-gene"></th>
+                  <th id="mutation-th"><input type="text" class="form-control" id="filter-mutation"></th>
+                  <th id="protein-id-th"><input type="text" class="form-control" id="filter-protein-id"></th>
+                  <th id="protein-mutation-th"><input type="text" class="form-control" id="filter-protein-mutation"></th>
+                  <th id="genomic-id-th"><input type="text" class="form-control" id="filter-genomic-id"></th>
+                  <th id="genomic-mutation-th"><input type="text" class="form-control" id="filter-genomic-mutation"></th>
+                  <th id="mrna-id-th"><input type="text" class="form-control" id="filter-mrna-id"></th>
+                  <th id="mrna-mutation-th"><input type="text" class="form-control" id="filter-mrna-mutation"></th>
+                  
                   <th></th>
-                  <th><input type="text" class="form-control" id="filter-np"></th>
-                  <th><input type="text" class="form-control" id="filter-nc"></th>
-                  <th><input type="text" class="form-control" id="filter-nm"></th>
                 </tr>
               </thead>
               <tbody id="referenciaContent">
                 {% for item in search_response %}
-                  <tr class="hover-bg">
-                    <td class="py-2 px-4 border-bottom break-words">
-                      <a href="./snp/{{item.0|slice:"2:"}}">
-                        {{ item.0 }}
-                      </a>
-                    </td>
-                    <td class="py-2 px-4 border-bottom break-words">
+                  <tr class="hover-bg" style="border-bottom: solid 1px black;">
+                    <td class="py-2 px-4 dbsnp-td"><!--DBSNP-->
                       <a href="https://www.ncbi.nlm.nih.gov/snp/{{ item.0 }}" target="_blank" rel="noopener noreferrer">
                         <img src="/vanda/{% static 'web/NIH_Logo.png' %}" alt="NCBI Logo" class="mr-3" style="width: 40px;">
                       </a>
                     </td>
-                    <td class="py-2 px-4 ">{{ item.4|join:' ' }}</td>
-                    <td class="py-2 px-4 border-bottom break-words">{{ item.3 }}</td>
-                    <td class="py-2 px-4 ">{{ item.2 }}</td>
-                    <td class="py-2 px-4 border-bottom break-words">
-                      {{ item.5.0|join:' ' }}
+                    <td class="py-2 px-4 snp-td"><!--SNP-->
+                      <a href="./snp/{{item.0|slice:"2:"}}">
+                        {{ item.0 }}
+                      </a>
                     </td>
-                    <td class="py-2 px-4 border-bottom break-words">
-                      {{ item.5.1|join:' ' }}
+                    <td class="py-2 px-4 gene-td"><!--Gene-->
+                      {{ item.4|join:' ' }}
                     </td>
-                    <td class="py-2 px-4 border-bottom break-words">
-                      {{ item.5.2|join:' ' }}
+                    <td class="py-2 px-4 mutation-td"><!--Mutation-->
+                      {{ item.3 }}
                     </td>
+                    <td class="py-2 px-4 protein-id-td">
+                      {% for protein in item.6.proteins %}
+                        {{ protein.id }}<br>
+                      {% endfor %}
+                    </td>
+                      <td class="py-2 px-4 protein-mutation-td">
+                      {% for protein in item.6.proteins  %}  
+                        {{ protein.mutation }}<br>
+                      {% endfor %}
+                    </td>
+                    <td class="py-2 px-4 genomic-id-td"><!--Genomic ID-->
+                      {% for genomic in item.6.genomics %}
+                        {{ genomic.id }}<br>
+                      {% endfor %}
+                    </td>
+                    <td class="py-2 px-4 genomic-mutation-td"><!--Genomic mutation-->
+                      {% for genomic in item.6.genomics %}
+                        {{ genomic.mutation }}<br>
+                      {% endfor %}
+                    </td>
+                    <td class="py-2 px-4 mrna-id-td"><!--mRNA ID-->
+                      {% for mrna in item.6.mrnas %}
+                        {{ mrna.id }}<br>
+                      {% endfor %}
+                    </td>
+                    <td class="py-2 px-4 mrna-mutation-td"><!--mRNA mutation-->
+                      {% for mrna in item.6.mrnas %}
+                        {{ mrna.mutation }}
+                      {% endfor %}
+                    </td>
+                    <td class="py-2 px-4 ">{{ item.2 }}</td><!--Position-->
                   </tr>
                 {% endfor %}
               </tbody>
@@ -200,42 +262,38 @@
           alert('An error occurred while downloading the JSON file.');
         }
       });
-      document.querySelectorAll('#filter-snp, #filter-gene, #filter-mutation, #filter-np, #filter-nc, #filter-nm').forEach(input => {
+      document.querySelectorAll('#filter-snp, #filter-gene, #filter-mutation, #filter-protein-id, #filter-protein-mutation, #filter-genomic-id, #filter-genomic-mutation, #filter-mrna-id, #filter-mrna-mutation').forEach(input => {
         input.addEventListener('input', filterTable);
       });
 
       function filterTable() {
-        const snpFilter = document.getElementById('filter-snp').value.toLowerCase();
-        const geneFilter = document.getElementById('filter-gene').value.toLowerCase();
-        const mutationFilter = document.getElementById('filter-mutation').value.toLowerCase();
-        const npFilter = document.getElementById('filter-np').value.toLowerCase();
-        const ncFilter = document.getElementById('filter-nc').value.toLowerCase();
-        const nmFilter = document.getElementById('filter-nm').value.toLowerCase();
+
+        function getFilterValue(id) {
+            return document.getElementById(id).value.toLowerCase();
+        }
+
+        const filters = [
+            getFilterValue('filter-snp'),
+            getFilterValue('filter-gene'),
+            getFilterValue('filter-mutation'),
+            getFilterValue('filter-protein-id'),
+            getFilterValue('filter-protein-mutation'),
+            getFilterValue('filter-genomic-id'),
+            getFilterValue('filter-genomic-mutation'),
+            getFilterValue('filter-mrna-id'),
+            getFilterValue('filter-mrna-mutation')
+        ];
 
         const rows = document.querySelectorAll('#referenciaContent tr');
 
         rows.forEach(row => {
-          const snpCell = row.children[0].textContent.toLowerCase();
-          const geneCell = row.children[2].textContent.toLowerCase();
-          const mutationCell = row.children[3].textContent.toLowerCase();
-          const npCell = row.children[4].textContent.toLowerCase();
-          const ncCell = row.children[5].textContent.toLowerCase();
-          const nmCell = row.children[5].textContent.toLowerCase();
+            const cells = Array.from(row.children).slice(1, 10).map(cell => cell.textContent.toLowerCase());
 
-          if (snpCell.includes(snpFilter) &&
-            geneCell.includes(geneFilter) &&
-            mutationCell.includes(mutationFilter) &&
-            npCell.includes(npFilter) &&
-            ncCell.includes(ncFilter) &&
-            nmCell.includes(nmFilter)
-          ) {
-            row.style.display = '';
-          } else {
-            row.style.display = 'none';
-          }
+            const isVisible = filters.every((filter, index) => cells[index].includes(filter));
+
+            row.style.display = isVisible ? '' : 'none';
         });
       }
     </script>
-    <script src="/vanda/{% static 'web/scriptCollapsible.js' %}"></script>
   </body>
 </html>

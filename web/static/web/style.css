@@ -185,6 +185,7 @@ form{
   font-size: 2.5em;
 }
 .aboutPlat{
+  margin-top: 1.5vw;
   margin-bottom: 2vw;
   font-size: 2em;
 }
@@ -192,7 +193,7 @@ form{
   margin-top:3.5vw;
   font-size: 2em;
 }
-.NCBI{
+.titlesH3{
   margin: 2vw 0;
   font-size: 1.6em;
 }

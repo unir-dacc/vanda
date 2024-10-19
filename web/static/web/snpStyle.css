@@ -256,3 +256,49 @@ button:hover{
   background-color: #303030;
   color: white;
 }
+/* footer */
+footer{
+  text-align: center;
+  color: #999;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.footer-info{
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+.footer-topics{
+  margin: 0 10px;
+  width: 200px;
+  align-items: center;
+}
+.footer-topics hr{
+  width: 70%;
+  margin: .3vw auto;
+}
+.link-footer-topics{
+  color: #999;
+}
+.link-footer-topics:hover{
+  cursor: pointer;
+  color: #797979;
+}
+.align-logo-and-name{
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+}
+.align-logo-and-name img{
+  width: 20px;
+  height: 20px;
+}
+.link-footer{
+  color: #444444;
+}
+.copyright{
+  margin-top: 1vw;
+}
