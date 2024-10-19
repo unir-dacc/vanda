@@ -17,7 +17,7 @@ function verifCheck(){
             tdElement[i].style.display = displayStyle;
         }
     }
-    
+
     // Protein ID
     const proteinID = [
         elementByID('protein-id-checkbox'),

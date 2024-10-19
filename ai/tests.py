@@ -22,7 +22,7 @@ class ServicesTestCase(TestCase):
         pmids = []
 
         for article in articles:
-            pmids.append(article['pmid'])
+            pmids.append(article["pmid"])
 
         self.assertIn(default_snp_pmid, pmids)
 
@@ -32,14 +32,13 @@ class ServicesTestCase(TestCase):
         pmids = []
 
         for article in articles:
-            pmids.append(article['pmid'])
+            pmids.append(article["pmid"])
 
         self.assertIn(default_gene_pmid, pmids)
 
 
 class ModelsTestCase(TestCase):
     def test_summary_text(self):
-
         summary_abstract = summary(default_gene_abstract)
 
         self.assertLess(len(summary_abstract), len(default_gene_abstract))
@@ -54,11 +53,11 @@ class ViewTestCase(TestCase):
     def test_snp_page(self):
         client = Client()
 
-        response = client.get('/snp/' + default_snp)
+        response = client.get("/snp/" + default_snp)
         self.assertEqual(response.status_code, 200)
 
     def test_gene_page(self):
         client = Client()
 
-        response = client.get('/gene/' + default_gene)
+        response = client.get("/gene/" + default_gene)
         self.assertEqual(response.status_code, 200)

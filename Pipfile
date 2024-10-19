@@ -15,9 +15,6 @@ torch = "*"
 accelerate = "*"
 
 [dev-packages]
-pyright = "*"
-djhtml = "*"
-autopep8 = "*"
 ipython = "*"
 pre-commit = "*"
 
