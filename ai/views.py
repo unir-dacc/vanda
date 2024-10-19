@@ -88,7 +88,6 @@ def gene_page(request, geneid):
     for k in snp_topics:
         snp_topics[k] = remove_duplicates(snp_topics[k], "pmid")
 
-    print(snp_topics)
     description = services.get_summary_of_gene(geneid)
 
     return render(request, 'web/gene.html', {"gene_name": geneid, "data": topics, "description": description, "snp_topics": snp_topics})

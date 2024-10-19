@@ -27,7 +27,6 @@ def tokenizer(text):
 
     tokens = list(filter(is_token_in_considerable_tokens, result))
 
-    print(tokens)
     for item in tokens:
         while text[item['start']] not in characters:
             item['start'] -= 1
