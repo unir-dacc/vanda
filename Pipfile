@@ -17,6 +17,7 @@ accelerate = "*"
 [dev-packages]
 ipython = "*"
 pre-commit = "*"
+ruff = "*"
 
 [requires]
 python_version = "3.11"
