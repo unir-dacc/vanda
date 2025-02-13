@@ -39,6 +39,8 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "web",
     "entrez",
+	"search",
+	"ai"
 ]
 
 MIDDLEWARE = [
