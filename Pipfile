@@ -4,19 +4,9 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-django = "*"
-requests = "*"
-redis = "*"
-hiredis = "*"
-biopython = "*"
-python-dotenv = "*"
-transformers = "*"
-torch = "*"
-accelerate = "*"
 
 [dev-packages]
 ipython = "*"
-pre-commit = "*"
 ruff = "*"
 
 [requires]

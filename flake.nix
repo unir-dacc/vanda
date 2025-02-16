@@ -11,8 +11,7 @@
         config.allowUnfree = true;
       };
 
-    in
-    {
+    in {
       devShell.${system} = with pkgs;
 
         mkShell rec {
