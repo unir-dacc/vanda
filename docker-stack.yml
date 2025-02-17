@@ -1,0 +1,33 @@
+version: "3.8"
+
+services:
+  fastapi-app:
+    image: ghcr.io/ecotecha/crear-tech-b:${GIT_COMMIT_HASH}
+    env_file: ".env"
+    ports:
+      - target: 8000
+        published: 11000
+        protocol: tcp
+    depends_on:
+      - database
+    deploy:
+      replicas: 2
+      # resources:
+      #   limits:
+      #     memory: 256M
+      update_config:
+        order: start-first
+
+  database:
+    env_file: ".env"
+    image: postgres:16-alpine
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:

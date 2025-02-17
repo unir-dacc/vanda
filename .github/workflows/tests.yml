@@ -1,0 +1,83 @@
+name: Run Tests
+
+on:
+  push:
+    branches:
+      - dev
+      - hml
+  pull_request:
+    branches:
+      - dev
+      - hml
+
+jobs:
+  run-tests:
+    runs-on: self-hosted
+
+    services:
+      postgres:
+        image: "postgres:16-alpine"
+        env:
+          POSTGRES_USER: ${{ vars.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ vars.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ vars.POSTGRES_DB }}
+        ports:
+          - "5432:5432"
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Miniconda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          auto-update-conda: true
+          python-version: "3.12"
+          activate-environment: myenv
+
+      - name: Install pythonocc-core with Conda
+        run: |
+          conda install -n myenv -c conda-forge pythonocc-core -y
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install -y libpq-dev
+
+      - name: Set up pipenv cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/virtualenvs
+          key: ${{ runner.os }}-pipenv-${{ hashFiles('Pipfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pipenv-
+
+      - name: Configure Pipenv to use Conda's Python
+        run: |
+          pip install --upgrade pip pipenv
+          pipenv --python=$(conda run -n myenv which python) --site-packages
+          pipenv sync --dev
+
+      - name: Run tests with pytest
+        env:
+          DATABASE_URL: ${{ vars.TEST_DATABASE_URL }}
+          JWT_SECRET_KEY: ${{ vars.TEST_JWT_SECRET_KEY }}
+          PORT: ${{ vars.TEST_PORT }}
+          POSTGRES_PORT: ${{ vars.TEST_POSTGRES_PORT }}
+          POSTGRES_HOST: ${{ vars.TEST_POSTGRES_HOST }}
+          POSTGRES_DB: ${{ vars.TEST_POSTGRES_DB }}
+          POSTGRES_PASSWORD: ${{ vars.TEST_POSTGRES_PASSWORD }}
+          POSTGRES_USER: ${{ vars.TEST_POSTGRES_USER }}
+          RESEND_API_KEY: ${{ secrets.TEST_RESEND_API_KEY }}
+          DEBUG: 1
+        run: |
+          pipenv run pytest --maxfail=3 --disable-warnings
