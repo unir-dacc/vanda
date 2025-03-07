@@ -54,8 +54,8 @@ jobs:
           registry: "ghcr.io"
           username: ${{ secrets.REGISTRY_USER }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
-          remote_user: ${{ secrets.DEPLOY_USER }}
-          remote_host: ${{ secrets.DEPLOY_HOST }}
+          remote_user: ricardo
+          remote_host: computacao.unir.br
           stack_file: docker-stack.yml
           remote_private_key: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
-          remote_port: ${{ secrets.DEPLOY_PORT }}
+          remote_port: 443
