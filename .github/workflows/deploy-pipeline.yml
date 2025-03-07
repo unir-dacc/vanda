@@ -42,7 +42,7 @@ jobs:
         run: |
           echo "GIT_COMMIT_HASH=${{ github.sha }}" >> .env
           echo "EMAIL=${{ secrets.EMAIL }}" >> .env
-          echo "FASTAPI_ROOT_PATH=${{ secrets.EMAIL }}" >> .env
+          echo "FASTAPI_ROOT_PATH=/vanda/api/" >> .env
           echo "DEBUG=0" >> .env
 
       - name: Docker Stack Deploy
