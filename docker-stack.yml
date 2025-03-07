@@ -2,16 +2,16 @@ version: "3.8"
 
 services:
   fastapi-app:
-    image: ghcr.io/ecotecha/crear-tech-b:${GIT_COMMIT_HASH}
+    image: ghcr.io/riccardoalv/vanda:${GIT_COMMIT_HASH}
     env_file: ".env"
     ports:
       - target: 8000
-        published: 11000
+        published: 30534
         protocol: tcp
     depends_on:
       - database
     deploy:
-      replicas: 2
+      replicas: 1
       # resources:
       #   limits:
       #     memory: 256M
