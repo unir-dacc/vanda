@@ -1,11 +1,12 @@
-from typing import Union
+import os
 
+from app.routers import gene, search, snp
 from fastapi import FastAPI
 from fastapi_pagination import add_pagination
 
-from app.routers import search, snp, gene
+ROOT_PATH = os.getenv("FASTAPI_ROOT_PATH", "/api")
 
-app = FastAPI()
+app = FastAPI(root_path=ROOT_PATH)
 
 add_pagination(app)
 

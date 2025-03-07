@@ -1,9 +1,5 @@
 name: Deploy Pipeline
 on:
-  workflow_run:
-    workflows: ["Run Tests"]
-    types:
-      - completed
   push:
     branches:
       - "main"
@@ -42,15 +38,7 @@ jobs:
       - name: create env file
         run: |
           echo "GIT_COMMIT_HASH=${{ github.sha }}" >> .env
-          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env
-          echo "JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}" >> .env
-          echo "PORT=${{ secrets.PORT }}" >> .env
-          echo "POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}" >> .env
-          echo "POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}" >> .env
-          echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> .env
-          echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> .env
-          echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_USER }}" >> .env
-          echo "RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}" >> .env
+          echo "EMAIL=${{ secrets.EMAIL }}" >> .env
           echo "DEBUG=0" >> .env
 
       - name: Docker Stack Deploy
@@ -66,3 +54,4 @@ jobs:
           remote_host: ${{ secrets.DEPLOY_HOST }}
           stack_file: docker-stack.yml
           remote_private_key: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+          remote_port: ${{ secrets.DEPLOY_PORT }}
