@@ -43,11 +43,11 @@ jobs:
           echo "GIT_COMMIT_HASH=${{ github.sha }}" >> .env
           echo "EMAIL=${{ secrets.EMAIL }}" >> .env
           echo "FASTAPI_ROOT_PATH=/vanda/api/" >> .env
-          echo "DEBUG=0" >> .env
 
       - name: Docker Stack Deploy
         env:
           GIT_COMMIT_HASH: ${{ github.sha }}
+          DEBUG: 1
         uses: kitconcept/docker-stack-deploy@v1.2.0
         with:
           stack_name: vanda
