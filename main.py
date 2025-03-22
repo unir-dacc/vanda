@@ -11,11 +11,11 @@ ROOT_PATH = os.getenv("FASTAPI_ROOT_PATH", "/api")
 app = FastAPI(root_path=ROOT_PATH)
 
 app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+	CORSMiddleware,
+	allow_origins=["*"],
+	allow_credentials=True,
+	allow_methods=["*"],
+	allow_headers=["*"],
 )
 
 
@@ -28,4 +28,4 @@ app.include_router(gene.router, prefix="/gene", tags=["Gene"])
 
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+	return {"status": "ok"}

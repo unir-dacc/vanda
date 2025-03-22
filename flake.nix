@@ -15,7 +15,7 @@
       devShell.${system} = with pkgs;
 
         mkShell rec {
-          packages = [ python312 pipenv nodejs pyright ruff ];
+          packages = [ python311 pipenv nodejs pyright ruff ];
           shellHook = ''
             pipenv shell --fancy
             pre-commit install
