@@ -4,14 +4,16 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-fastapi = {extras = ["standard"], version = "*"}
-biopython = "*"
 fastapi-pagination = "*"
+biopython = "*"
+requests = "*"
 transformers = "*"
 torch = "*"
+fastapi = {extras = ["standard"], version = "*"}
 
 [dev-packages]
 ipython = "*"
+ruff = "*"
 
 [requires]
-python_version = "3.11"
+python_version = "3.12"

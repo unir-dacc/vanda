@@ -14,13 +14,12 @@ RUN pip install --no-cache-dir pipenv
 # Copy the Pipfile and Pipfile.lock into the container
 COPY Pipfile Pipfile.lock /app/
 
-# Install dependencies inside the container using Pipenv
-RUN pipenv requirements > requirements.txt
-
-RUN pip install -r requirements.txt
+RUN pipenv sync
 
 # Copy the FastAPI application code into the container
 COPY . .
 
+EXPOSE 8000
+
 # Set the entry point to run the FastAPI application using Uvicorn
-ENTRYPOINT ["fastapi", "run"]
+ENTRYPOINT ["pipenv", "run", "fastapi", "run"]
