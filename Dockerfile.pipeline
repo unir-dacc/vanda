@@ -1,0 +1,23 @@
+FROM python:3.12-slim
+
+ENV PYTHONUNBUFFERED=1
+ENV NVIDIA_VISIBLE_DEVICES=all
+ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
+
+WORKDIR /app
+
+# Instalar torch com CUDA 11.8 (menor que pytorch/pytorch image)
+RUN pip install --no-cache-dir \
+    torch --index-url https://download.pytorch.org/whl/cu118 \
+    && pip install --no-cache-dir \
+    transformers \
+    biopython \
+    requests \
+    python-dotenv \
+    tqdm \
+    scikit-learn \
+    flair \
+    && rm -rf /root/.cache/pip /tmp/*
+
+# O código é montado via volume, não copiado
+CMD ["python", "run_all.py"]
