@@ -1,0 +1,11 @@
+[tool.pyright]
+typeCheckingMode = "basic"
+pythonVersion = "3.12"
+venvPath = "/home/ricardo/.local/share/virtualenvs"
+venv = "vanda-wiN1gOH0"
+
+[tool.ruff]
+target-version = "py312"
+
+[tool.ruff.format]
+indent-style = "tab"

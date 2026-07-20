@@ -1,11 +1,14 @@
-import requests
 import logging
 import os
+
+import requests
 from Bio import Entrez
 from dotenv import load_dotenv
 
 load_dotenv()
 Entrez.email = os.getenv("EMAIL")
+
+logger = logging.getLogger(__name__)
 
 
 def search_snp(query, page=1, max_results=500):
@@ -17,7 +20,7 @@ def search_snp(query, page=1, max_results=500):
 		result = response.json()
 		return {"num_items": result[0], "data": result[3]}
 	else:
-		logging.error(f"Error in search_snp request: {response.status_code}")
+		logger.error(f"Error in search_snp request: {response.status_code}")
 		return {"num_items": 0, "data": []}
 
 
@@ -79,7 +82,7 @@ def get_abstracts_by_gene(gene_id):
 		return [], {}
 
 	filter_search = f"({' OR '.join(ids)})" + get_filter_term()
-	print(filter_search)
+	logger.debug(filter_search)
 
 	pubmed_ids = []
 	with Entrez.esearch(db="pubmed", term=filter_search, retmode="xml") as handle:
@@ -132,7 +135,7 @@ def get_abstracts_by_snp(snp_id):
 
 
 def fetch_pubmed_articles(snp_ids):
-	filter_search = f'(" OR ".join({snp_ids}))' + get_filter_term()
+	filter_search = "(" + " OR ".join(snp_ids) + ")" + get_filter_term()
 
 	with Entrez.esearch(db="pubmed", term=filter_search, retmode="xml") as handle:
 		pubmed_ids_filtered = Entrez.read(handle).get("IdList", [])
@@ -182,7 +185,7 @@ def fetch_pubmed_articles_by_snp(snp_ids, include_abstract=False):
 		) as handle:
 			articles = Entrez.read(handle)
 	except Exception as e:
-		print(f"Erro ao buscar detalhes dos artigos: {e}")
+		logger.error(f"Erro ao buscar detalhes dos artigos: {e}")
 		return []
 
 	abstracts = []

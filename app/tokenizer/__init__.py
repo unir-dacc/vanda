@@ -22,9 +22,9 @@ def extract_diseases(text):
 	acronyms = []
 
 	for item in tokens:
-		while text[item["start"]] not in characters:
+		while item["start"] > 0 and text[item["start"]] not in characters:
 			item["start"] -= 1
-		while text[item["end"]] not in characters:
+		while item["end"] < len(text) - 1 and text[item["end"]] not in characters:
 			item["end"] += 1
 
 		word = text[item["start"] + 1 : item["end"]].strip()

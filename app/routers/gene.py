@@ -22,9 +22,6 @@ def remove_duplicates(dicts, key):
 
 @router.get("/{gene_id}")
 def gene_page(gene_id: str):
-	abstracts = []
-	snp_to_pubmed = {}
-
 	abstracts, snp_to_pubmed = entrez.get_abstracts_by_gene(gene_id)
 
 	topics = render_topics(abstracts)
@@ -37,34 +34,22 @@ def gene_page(gene_id: str):
 			for _, a in topics.items():
 				for article in a:
 					if i == article["pmid"]:
-						if k in snp_topics:
-							snp_topics[k].append(
-								{
-									"pmid": article["pmid"],
-									"title": article["title"],
-									"abstract": article["abstract"],
-								}
-							)
-						else:
+						if k not in snp_topics:
 							snp_topics[k] = []
-							snp_topics[k].append(
-								{
-									"pmid": article["pmid"],
-									"title": article["title"],
-									"abstract": article["abstract"],
-								}
-							)
+						snp_topics[k].append(
+							{
+								"pmid": article["pmid"],
+								"title": article["title"],
+								"abstract": article["abstract"],
+							}
+						)
 
 	for k in snp_topics:
 		snp_topics[k] = remove_duplicates(snp_topics[k], "pmid")
 
-	description = entrez.get_summary_of_gene(gene_id)
-
-	return (
-		{
-			"gene_name": gene_id,
-			"description": description,
-			"snp_topics": snp_topics,
-			"data": topics,
-		},
-	)
+	return {
+		"gene_name": gene_id,
+		"description": description,
+		"snp_topics": snp_topics,
+		"data": topics,
+	}
