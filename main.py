@@ -1,6 +1,6 @@
 import os
 
-from app.routers import gene, search, snp, variants
+from app.routers import evidence, gene, search, snp, variants
 from fastapi import FastAPI
 from fastapi_pagination import add_pagination
 
@@ -25,6 +25,7 @@ app.include_router(search.router, prefix="/search", tags=["Search"])
 app.include_router(snp.router, prefix="/snp", tags=["SNP"])
 app.include_router(gene.router, prefix="/gene", tags=["Gene"])
 app.include_router(variants.router, prefix="/snps", tags=["Variants"])
+app.include_router(evidence.router, prefix="/evidence", tags=["Evidence"])
 
 
 @app.get("/health")

@@ -31,7 +31,8 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+!lib/
+!lib/*.py
 lib64/
 parts/
 sdist/

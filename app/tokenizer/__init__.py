@@ -1,40 +1,16 @@
-from transformers import pipeline, AutoTokenizer, AutoModelForTokenClassification
+from lib.ner import BioNER
 
-tokenizer = AutoTokenizer.from_pretrained("d4data/biomedical-ner-all")
-model = AutoModelForTokenClassification.from_pretrained("d4data/biomedical-ner-all")
-
-pipe = pipeline("ner", model=model, tokenizer=tokenizer, aggregation_strategy="simple")
-
-characters = [",", ".", "!", "?", ";", '"', "'", " ", "(", ")"]
-
-considerable_tokens = ["Disease_disorder"]
+_ner = None
 
 
-def is_token_in_considerable_tokens(token):
-	return token["entity_group"] in considerable_tokens
+def _get_ner():
+	global _ner
+	if _ner is None:
+		_ner = BioNER()
+	return _ner
 
 
 def extract_diseases(text):
-	result = pipe(text)
-	tokens = list(filter(is_token_in_considerable_tokens, result))
-
-	words = []
-	acronyms = []
-
-	for item in tokens:
-		while item["start"] > 0 and text[item["start"]] not in characters:
-			item["start"] -= 1
-		while item["end"] < len(text) - 1 and text[item["end"]] not in characters:
-			item["end"] += 1
-
-		word = text[item["start"] + 1 : item["end"]].strip()
-
-		if word.isupper() and len(word) <= 6:
-			acronyms.append(word)
-		else:
-			words.append(word)
-
-	if not words:
-		return acronyms
-
-	return words
+	ner = _get_ner()
+	entities = ner.extract_diseases(text)
+	return [e["text"] for e in entities]

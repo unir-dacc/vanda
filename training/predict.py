@@ -1,11 +1,12 @@
 """
-Inferência com modelo BioBERT treinado.
+Inferência: HunFlair2 (NER) + PubMedBERT RE (classificação de relação).
 
-Lê artigos do snp_database.sqlite, classifica as sentenças e popula
-a tabela snp_preds no database.sqlite de produção.
+Lê artigos do database.sqlite, extrai pares (Gene/SNP, Disease),
+classifica a relação e popula a tabela snp_preds com confidence scores.
 
 Uso:
-    python predict.py --model ./model --source ../processing/snp_database.sqlite --target ../database.sqlite
+    python predict.py --model ./model --db ../database.sqlite
+    python predict.py --model ./model --db ../database.sqlite --clear --min-confidence 0.7
 """
 
 import argparse
@@ -13,66 +14,73 @@ import logging
 import re
 import sqlite3
 
-import spacy
 import torch
 from tqdm import tqdm
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
+from lib.ner import BioNER
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-ID2LABEL = {0: "beneficial", 1: "harmful", 2: "neutral", 3: "inconclusive"}
-
-SNP_PATTERNS = [
-	r"\brs\d{3,}\b",
-	r"\b[ACGT]>[ACGT]\b",
-	r"\b[ACGT]/[ACGT]\b",
-	r"\b[ACGT]→[ACGT]\b",
-	r"c\.\d+[A-Z]>[A-Z]",
-	r"g\.\d+[A-Z]>[A-Z]",
-	r"p\.[A-Z][a-z]{2}\d+[A-Z][a-z]{2}",
-	r"\b[A-Z]\d+[A-Z]\b",
-	r"\d+[A-Z]>[A-Z]",
-]
-SNP_REGEX = re.compile("|".join(SNP_PATTERNS))
+ID2LABEL = {0: "beneficial", 1: "harmful", 2: "neutral", 3: "no_relation"}
+MODEL_VERSION = "pubmedbert-biored-v1"
 
 
-def get_sentences(nlp, text):
-	doc = nlp(text)
-	return [sent.text.strip() for sent in doc.sents if len(sent.text.strip()) > 20]
+_SENT_RE = re.compile(r"(?<=[.!?])\s+")
+
+
+def get_sentences(text):
+	"""Segmenta texto em sentenças usando heurística simples."""
+	sentences = _SENT_RE.split(text)
+	return [s.strip() for s in sentences if len(s.strip()) > 20]
 
 
 def get_context_windows(sentences, window_size=3):
 	windows = []
-	for i in range(len(sentences) - window_size + 1):
-		windows.append(" ".join(sentences[i : i + window_size]))
+	for i in range(max(1, len(sentences) - window_size + 1)):
+		end = min(i + window_size, len(sentences))
+		windows.append(" ".join(sentences[i:end]))
 	return windows
 
 
-def extract_snps_and_diseases(nlp, text):
-	doc = nlp(text)
-	diseases = [ent.text for ent in doc.ents if ent.label_ == "DISEASE"]
-	snps = [m.group() for m in SNP_REGEX.finditer(text)]
-	return snps, diseases
+def create_entity_marked_input(text, entity1, entity2):
+	"""Cria input com entity markers @entity1@ e #entity2#."""
+	# Encontrar posições das entidades no texto
+	e1_start = text.lower().find(entity1.lower())
+	e2_start = text.lower().find(entity2.lower())
 
+	if e1_start == -1 or e2_start == -1:
+		return None
 
-def create_target_tables(conn):
-	cursor = conn.cursor()
-	cursor.execute("""
-		CREATE TABLE IF NOT EXISTS snp_preds (
-			pmid INTEGER,
-			title TEXT,
-			snp TEXT,
-			disease TEXT,
-			direction TEXT
+	e1_end = e1_start + len(entity1)
+	e2_end = e2_start + len(entity2)
+
+	# Ordenar por posição
+	if e1_start < e2_start:
+		result = (
+			text[:e1_start]
+			+ "@" + text[e1_start:e1_end] + "@"
+			+ text[e1_end:e2_start]
+			+ "#" + text[e2_start:e2_end] + "#"
+			+ text[e2_end:]
 		)
-	""")
-	conn.commit()
+	else:
+		result = (
+			text[:e2_start]
+			+ "#" + text[e2_start:e2_end] + "#"
+			+ text[e2_end:e1_start]
+			+ "@" + text[e1_start:e1_end] + "@"
+			+ text[e1_end:]
+		)
+
+	return result[:512]
 
 
 def predict_batch(model, tokenizer, texts, device, max_length=256):
 	if not texts:
-		return []
+		return [], []
+
 	encodings = tokenizer(
 		texts,
 		max_length=max_length,
@@ -83,9 +91,29 @@ def predict_batch(model, tokenizer, texts, device, max_length=256):
 
 	with torch.no_grad():
 		outputs = model(**encodings)
-		preds = torch.argmax(outputs.logits, dim=-1)
+		probs = torch.softmax(outputs.logits, dim=-1)
+		preds = torch.argmax(probs, dim=-1)
+		confidences = probs.max(dim=-1).values
 
-	return [ID2LABEL[p.item()] for p in preds]
+	labels = [ID2LABEL[p.item()] for p in preds]
+	confs = [c.item() for c in confidences]
+	return labels, confs
+
+
+def get_last_processed(cursor):
+	cursor.execute(
+		"SELECT value FROM pipeline_state WHERE key = 'last_predicted_rowid'"
+	)
+	row = cursor.fetchone()
+	return int(row[0]) if row else 0
+
+
+def update_last_processed(cursor, rowid):
+	cursor.execute(
+		"""INSERT OR REPLACE INTO pipeline_state (key, value, updated_at)
+		VALUES ('last_predicted_rowid', ?, CURRENT_TIMESTAMP)""",
+		(str(rowid),),
+	)
 
 
 def run(args):
@@ -97,97 +125,142 @@ def run(args):
 	model = AutoModelForSequenceClassification.from_pretrained(args.model).to(device)
 	model.eval()
 
-	logger.info("Carregando spaCy NER...")
-	nlp = spacy.load("en_ner_bc5cdr_md")
-	if "sentencizer" not in nlp.pipe_names:
-		nlp.add_pipe("sentencizer")
+	logger.info("Carregando HunFlair2 NER...")
+	ner = BioNER()
 
-	source_conn = sqlite3.connect(args.source)
-	source_cursor = source_conn.cursor()
+	conn = sqlite3.connect(args.db)
+	cursor = conn.cursor()
 
-	source_cursor.execute("""
-		SELECT a.pmid, a.title, a.abstract, sa.snp_id
-		FROM articles a
-		JOIN snp_articles sa ON a.pmid = sa.pmid
-		WHERE a.abstract IS NOT NULL AND a.abstract != ''
+	# Garantir que tabelas existem
+	cursor.execute("""
+		CREATE TABLE IF NOT EXISTS pipeline_state (
+			key TEXT PRIMARY KEY, value TEXT,
+			updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+		)
 	""")
-	rows = source_cursor.fetchall()
-	source_conn.close()
-	logger.info(f"Total de pares artigo-SNP: {len(rows)}")
 
-	target_conn = sqlite3.connect(args.target)
-	create_target_tables(target_conn)
-	target_cursor = target_conn.cursor()
-
-	# Limpar tabela anterior se solicitado
 	if args.clear:
-		target_cursor.execute("DELETE FROM snp_preds")
-		target_conn.commit()
+		cursor.execute("DELETE FROM snp_preds")
+		cursor.execute(
+			"DELETE FROM pipeline_state WHERE key = 'last_predicted_rowid'"
+		)
+		conn.commit()
 		logger.info("Tabela snp_preds limpa.")
+
+	last_rowid = get_last_processed(cursor)
+	logger.info(f"Processando artigos a partir de rowid > {last_rowid}")
+
+	cursor.execute(
+		"""SELECT rowid, pmid, title, abstract FROM articles
+		WHERE abstract IS NOT NULL AND abstract != '' AND rowid > ?
+		ORDER BY rowid""",
+		(last_rowid,),
+	)
+	rows = cursor.fetchall()
+	logger.info(f"Artigos a processar: {len(rows)}")
 
 	batch_texts = []
 	batch_meta = []
 	inserted = 0
+	max_rowid = last_rowid
 
-	for pmid, title, abstract, snp_id in tqdm(rows, desc="Processando"):
+	for rowid, pmid, title, abstract in tqdm(rows, desc="Processando"):
+		max_rowid = max(max_rowid, rowid)
 		text = f"{title}. {abstract}"
-		sentences = get_sentences(nlp, text)
+		sentences = get_sentences(text)
 		windows = get_context_windows(sentences, window_size=3)
 
 		for window in windows:
-			snps_found, diseases_found = extract_snps_and_diseases(nlp, window)
-			if not snps_found or not diseases_found:
-				continue
+			entities = ner.extract_entities(window)
+			snps = [e for e in entities if e["type"] == "SNP"]
+			genes = [e for e in entities if e["type"] == "Gene"]
+			diseases = [e for e in entities if e["type"] == "Disease"]
 
-			batch_texts.append(window)
-			batch_meta.append({
-				"pmid": pmid,
-				"title": title,
-				"snp": f"RS{snp_id}" if not str(snp_id).upper().startswith("RS") else str(snp_id).upper(),
-				"diseases": diseases_found,
-			})
-
-			if len(batch_texts) >= args.batch_size:
-				directions = predict_batch(model, tokenizer, batch_texts, device)
-				for meta, direction in zip(batch_meta, directions):
-					if direction == "inconclusive":
+			# Para cada par (SNP/Gene, Disease)
+			gene_like = snps + genes
+			for gl in gene_like:
+				for disease in diseases:
+					marked = create_entity_marked_input(
+						window, gl["text"], disease["text"]
+					)
+					if marked is None:
 						continue
-					for disease in meta["diseases"]:
-						target_cursor.execute(
-							"INSERT INTO snp_preds (pmid, title, snp, disease, direction) VALUES (?, ?, ?, ?, ?)",
-							(meta["pmid"], meta["title"], meta["snp"], disease, direction),
-						)
+
+					batch_texts.append(marked)
+					batch_meta.append({
+						"pmid": pmid,
+						"title": title,
+						"snp": gl["text"].upper(),
+						"disease": disease["text"],
+					})
+
+			# Processar batch
+			if len(batch_texts) >= args.batch_size:
+				labels, confs = predict_batch(
+					model, tokenizer, batch_texts, device
+				)
+				for meta, label, conf in zip(batch_meta, labels, confs):
+					if label == "no_relation":
+						continue
+					if conf < args.min_confidence:
+						continue
+					cursor.execute(
+						"""INSERT INTO snp_preds
+						(pmid, title, snp, disease, direction, confidence, model_version)
+						VALUES (?, ?, ?, ?, ?, ?, ?)""",
+						(
+							meta["pmid"],
+							meta["title"],
+							meta["snp"],
+							meta["disease"],
+							label,
+							round(conf, 4),
+							MODEL_VERSION,
+						),
+					)
+
 				inserted += len(batch_texts)
 				batch_texts = []
 				batch_meta = []
 
 				if inserted % 10000 == 0:
-					target_conn.commit()
-					logger.info(f"Inseridos {inserted} registros...")
+					update_last_processed(cursor, max_rowid)
+					conn.commit()
+					logger.info(f"Processados {inserted} pares...")
 
-	# Processar último batch
+	# Último batch
 	if batch_texts:
-		directions = predict_batch(model, tokenizer, batch_texts, device)
-		for meta, direction in zip(batch_meta, directions):
-			if direction == "inconclusive":
+		labels, confs = predict_batch(model, tokenizer, batch_texts, device)
+		for meta, label, conf in zip(batch_meta, labels, confs):
+			if label == "no_relation" or conf < args.min_confidence:
 				continue
-			for disease in meta["diseases"]:
-				target_cursor.execute(
-					"INSERT INTO snp_preds (pmid, title, snp, disease, direction) VALUES (?, ?, ?, ?, ?)",
-					(meta["pmid"], meta["title"], meta["snp"], disease, direction),
-				)
+			cursor.execute(
+				"""INSERT INTO snp_preds
+				(pmid, title, snp, disease, direction, confidence, model_version)
+				VALUES (?, ?, ?, ?, ?, ?, ?)""",
+				(
+					meta["pmid"],
+					meta["title"],
+					meta["snp"],
+					meta["disease"],
+					label,
+					round(conf, 4),
+					MODEL_VERSION,
+				),
+			)
 
-	target_conn.commit()
-	target_conn.close()
-	logger.info(f"Concluído. Total de registros processados: {inserted + len(batch_texts)}")
+	update_last_processed(cursor, max_rowid)
+	conn.commit()
+	conn.close()
+	logger.info(f"Concluído. Total pares processados: {inserted + len(batch_texts)}")
 
 
 if __name__ == "__main__":
-	parser = argparse.ArgumentParser(description="Inferência BioBERT para snp_preds")
-	parser.add_argument("--model", required=True, help="Diretório do modelo treinado")
-	parser.add_argument("--source", required=True, help="snp_database.sqlite com artigos")
-	parser.add_argument("--target", required=True, help="database.sqlite de destino")
+	parser = argparse.ArgumentParser(description="Inferência PubMedBERT RE")
+	parser.add_argument("--model", required=True, help="Diretório do modelo")
+	parser.add_argument("--db", required=True, help="database.sqlite")
 	parser.add_argument("--batch_size", type=int, default=32)
-	parser.add_argument("--clear", action="store_true", help="Limpar snp_preds antes de inserir")
+	parser.add_argument("--min-confidence", type=float, default=0.0)
+	parser.add_argument("--clear", action="store_true")
 	args = parser.parse_args()
 	run(args)

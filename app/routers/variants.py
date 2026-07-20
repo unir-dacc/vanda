@@ -1,14 +1,12 @@
 from fastapi import APIRouter
-import sqlite3
+from lib.db import get_connection
 
 router = APIRouter()
 
-sql_path = './database.sqlite'
 
 @router.get("/food-analize/{food_name}")
 def food_analize(food_name: str):
-    conn = sqlite3.connect(sql_path)
-    conn.row_factory = sqlite3.Row
+    conn = get_connection()
     cursor = conn.cursor()
 
     try:
