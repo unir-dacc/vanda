@@ -160,54 +160,108 @@ Epoch 10: F1 = 0.8465 ← melhor modelo
 
 A tabela `foods` (3.3M registros, pré-importada do FooDB) mapeia cada gene aos alimentos que contêm nutrientes metabolizados por esse gene. O JOIN com `snp_preds` via `gene_info` permite responder: *"Para este alimento, quais SNPs são benéficos/prejudiciais?"*
 
-### Etapa 6: Normalização (`processing/normalize_db.py`)
+### Etapa 6: Validação e Controle de Qualidade dos Dados
 
-**O que faz**: Limpa e padroniza os dados no banco.
+A saída do pipeline de classificação contém ruídos inerentes à extração automática de texto. Um processo de validação em múltiplas camadas foi aplicado para garantir a qualidade e confiabilidade dos dados apresentados na plataforma.
 
-1. **Case normalization**: "obesity" / "Obesity" / "OBESITY" → "Obesity"
-2. **Sinônimos**: "CRC" → "Colorectal Cancer", "T2D" → "Type 2 Diabetes", "obese" → "Obesity"
-3. **Deduplicação**: Remove registros com mesmo pmid+snp+disease+direction
-4. **Remoção de legacy**: Exclui dados do pipeline antigo (BioBERT + weak labels)
+#### 6.1 — Normalização Inicial (`processing/normalize_db.py`)
 
+Primeira camada de limpeza nos dados brutos do pipeline:
+
+1. **Normalização de case**: Unificação de variações tipográficas ("obesity" / "Obesity" / "OBESITY" → "Obesity")
+2. **Merge de sinônimos**: Mapeamento de abreviações e nomes alternativos para termos canônicos ("CRC" → "Colorectal Cancer", "T2D" → "Type 2 Diabetes", "obese" → "Obesity")
+3. **Deduplicação**: Remoção de registros duplicados com mesmo pmid+snp+disease+direction
+4. **Remoção de dados legacy**: Exclusão dos dados do pipeline antigo (BioBERT + weak labels), que tinha F1 ~0.50 e produzia classificações ruidosas
+
+**Resultado**: 508K registros → **64.9K**
+
+#### 6.2 — Limpeza de Entidades Incorretas (`processing/cleanup_pipeline.py`)
+
+Identificação e remoção de erros sistemáticos do NER e do classificador:
+
+1. **Genes classificados como SNPs**: O HunFlair2 NER extraía nomes de genes (SLC6A3, DOPAMINE TRANSPORTER, DAT1) e os salvava no campo `snp` do banco de dados. Como genes não são variantes genéticas, esses registros produziam associações sem base biológica. Critério: campo `snp` que não inicia com "RS". **43K registros removidos.**
+
+2. **Doenças fora do escopo nutrigenético**: O filtro MeSH incluía "Pharmacogenetics", capturando artigos sobre interações droga-gene (não alimento-gene). Isso gerava associações como "Beer → Cocaine Addiction" (via gene SLC6A3 e um artigo sobre disulfiram). Removidas doenças psiquiátricas, infecciosas e farmacogenéticas sem relação com nutrição: Cocaine Addiction, Schizophrenia, HIV, Epilepsy, Tuberculosis, etc. **5K registros removidos, "Pharmacogenetics" removido do filtro MeSH.**
+
+3. **Predições contraditórias**: O mesmo par SNP+doença classificado com direções diferentes em janelas de texto distintas (ex: rs1229984 + Alcohol Dependence classificado como "harmful" em uma frase e "neutral" em outra). Resolução: manter apenas a predição com maior confidence. **4K registros removidos.**
+
+4. **Entidades genéricas**: Doenças extraídas pelo NER que não representam condições específicas ("disease", "tumor", "cancer" sem qualificador). **1.5K registros removidos.**
+
+**Resultado**: 64.9K → **15.8K**
+
+#### 6.3 — Normalização de Nomenclatura GWAS (`processing/normalize_gwas_diseases.py`)
+
+O GWAS Catalog utiliza nomenclatura descritiva com qualificadores experimentais que dificultam o cruzamento com os dados da IA:
+
+- "Type 2 Diabetes (adjusted for BMI)" → **Type 2 Diabetes**
+- "Coronary Artery Disease (myocardial Infarction, Percutaneous Transluminal Coronary Angioplasty...)" → **Coronary Artery Disease**
+- "Body mass index" → **Obesity**
+
+Estudos compostos/pleiotrópicos removidos ("Psoriasis or Type 2 Diabetes (trans-disease Meta-analysis)").
+
+**Resultado**: 495 → **342 doenças únicas no GWAS**
+
+#### 6.4 — Expansão de Siglas Clínicas
+
+Siglas reconhecidas expandidas para nomes completos legíveis:
+
+| Sigla | Expansão |
+|---|---|
+| DM2, T2DM | Type 2 Diabetes |
+| HTN, EH | Hypertension |
+| CRC, Mcrc | Colorectal Cancer |
+| Mets, MetS | Metabolic Syndrome |
+| AMD | Age-Related Macular Degeneration |
+| NASH, MASH | Non-Alcoholic Fatty Liver Disease |
+| GDM | Gestational Diabetes |
+| NTD, Ntds | Neural Tube Defects |
+
+Siglas não reconhecidas (ZSDS, NSCPO, EAP, HFU, etc.) removidas por não serem interpretáveis por usuários da plataforma. **~3K registros removidos.**
+
+**Resultado final**: 15.8K → **12.5K registros**
+
+#### 6.5 — Validação Cruzada GWAS ↔ IA
+
+Após normalização, **134 pares SNP+Disease** existem em ambas as fontes (GWAS Catalog e PubMedBERT). Análise de concordância:
+
+| Concordância | Pares | % |
+|---|---|---|
+| **Mesma direção** | 50 | 37% |
+| Direções diferentes | 84 | 63% |
+
+Detalhamento da discordância:
+
+| GWAS | IA | Pares | Explicação |
+|---|---|---|---|
+| harmful | harmful | 38 | Concordância total — evidência mais forte |
+| neutral | neutral | 12 | Concordância total |
+| neutral | harmful | 86 | GWAS: OR próximo de 1 (efeito pequeno); IA: texto diz "risk" |
+| harmful | neutral | 12 | GWAS: OR significativo; IA: classificou como neutro |
+| beneficial | harmful | 2 | Discordância total — requer revisão manual |
+
+A discordância principal (GWAS "neutral" vs IA "harmful") reflete perspectivas metodológicas diferentes: o GWAS mede o **tamanho do efeito** (OR próximo de 1.0 = pequeno → neutral), enquanto a IA interpreta a **linguagem do artigo** (que pode dizer "increased risk" mesmo para efeitos pequenos).
+
+#### Resumo do Processo de Qualidade
+
+| Etapa | Registros removidos | Registros restantes |
+|---|---|---|
+| Saída bruta do pipeline | — | 508K |
+| Remoção legacy + dedup | 443K | 64.9K |
+| Genes como SNPs | 43K | ~22K |
+| Doenças não-nutrigenéticas | 5K | ~17K |
+| Duplicatas contraditórias | 4K | ~13K |
+| Doenças genéricas/lixo | 1.5K | ~12K |
+| Siglas não reconhecidas | 3K | 15.8K* |
+| Normalização + expansão siglas | — | **12.5K** |
+
+*Nota: as etapas não são estritamente sequenciais — alguns registros são afetados por múltiplas regras.
+
+**Scripts de validação**:
 ```bash
 python processing/normalize_db.py --db database.sqlite --remove-legacy
-```
-
-**Resultado**: 508K registros → **64.9K** (removeu 277K legacy + 166K duplicatas)
-
-### Etapa 7: Limpeza Profunda (`processing/cleanup_pipeline.py`)
-
-**O que faz**: Remove dados incorretos do pipeline.
-
-1. **Genes como SNPs**: O NER extraía nomes de genes (SLC6A3, DOPAMINE TRANSPORTER) e salvava no campo `snp`. Removidos 43K registros onde `snp` não começa com "RS".
-2. **Doenças não-nutrigenéticas**: Removidas associações com Cocaine Addiction, Schizophrenia, HIV, Epilepsy, Tuberculosis, etc. (~5K registros)
-3. **Duplicatas contraditórias**: Mesmo par SNP+doença com direções diferentes → mantém apenas a de maior confidence (~4K registros)
-4. **Doenças genéricas**: "disease", "tumor", "cancer" sem contexto (~1.5K)
-
-```bash
 python processing/cleanup_pipeline.py --db database.sqlite
+python processing/normalize_gwas_diseases.py --db database.sqlite
 ```
-
-**Resultado**: 64.9K → **15.8K registros limpos e confiáveis**
-
-### Etapa 8: Normalização GWAS (`processing/normalize_gwas_diseases.py`)
-
-**O que faz**: Padroniza nomes de doenças do GWAS Catalog para fazer match com a IA.
-
-- "Type 2 Diabetes (adjusted for BMI)" → "Type 2 Diabetes"
-- "Coronary Artery Disease (myocardial Infarction...)" → "Coronary Artery Disease"
-- "Body mass index" → "Obesity"
-- Remove estudos compostos/pleiotrópicos
-
-**Resultado**: 495 → **342 doenças únicas**, overlap GWAS↔IA: 118 → **134 pares**, concordância: 31 → **50 pares**
-
-### Validação Cruzada GWAS ↔ IA
-
-134 pares SNP+Disease existem em **ambas** as fontes. Concordância:
-- **50 concordam** na direção (37%) — evidência mais forte
-- 86 discordam: GWAS "neutral" (OR~1.2) vs IA "harmful" (texto diz "risk") — perspectivas diferentes sobre efeitos pequenos
-
-**Nota sobre Pharmacogenetics**: O filtro MeSH originalmente incluía "Pharmacogenetics", o que capturava artigos sobre medicamentos (não nutrientes). Removido do filtro para evitar associações farmacogenéticas incorretas (ex: Beer → Cocaine Addiction via gene SLC6A3)
 
 ---
 
@@ -221,7 +275,7 @@ python processing/cleanup_pipeline.py --db database.sqlite
 | `articles` | PMID, título, abstract do PubMed | 6K |
 | `snp_articles` | Relação N:N entre SNPs e artigos | 30K |
 | `foods` | Gene → alimento (FooDB) | 3.3M |
-| `snp_preds` | Predições: SNP, doença, direção, confidence | ~15.8K |
+| `snp_preds` | Predições: SNP, doença, direção, confidence | ~12.5K |
 | `pipeline_state` | Estado do pipeline incremental | < 10 |
 | `_migrations` | Migrações de schema aplicadas | ~4 |
 
@@ -551,11 +605,11 @@ Repositório separado: `vanda-f/`
 | Métrica | Valor |
 |---|---|
 | SNPs catalogados | 261K |
-| Predições limpas | 15.8K |
+| Predições limpas (pós-validação) | 12.5K |
 | Artigos PubMed | 6K |
 | Links food-gene (FooDB) | 3.3M |
-| GWAS associations | 4.2K |
-| IA associations | 11.6K |
+| GWAS associations | 3.8K |
+| IA associations | 8.8K |
 | Overlap GWAS↔IA | 134 pares |
 | Concordância | 50 pares (37%) |
 | F1-score modelo | 0.8465 |
