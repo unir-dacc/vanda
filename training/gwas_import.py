@@ -61,30 +61,63 @@ NUTRITION_GENES = {
 
 def download_gwas(cache_path):
 	"""Baixa o TSV completo do GWAS Catalog."""
-	if os.path.exists(cache_path):
-		size_mb = os.path.getsize(cache_path) / (1024 * 1024)
-		logger.info(f"GWAS Catalog já baixado: {cache_path} ({size_mb:.0f}MB)")
-		return cache_path
+	if os.path.exists(cache_path) and os.path.getsize(cache_path) > 1000:
+		# Verificar se é TSV real (não ZIP)
+		with open(cache_path, "rb") as f:
+			header = f.read(4)
+		if header[:2] == b"PK":  # É ZIP, não TSV
+			logger.info("  Arquivo anterior era ZIP, removendo...")
+			os.remove(cache_path)
+		else:
+			size_mb = os.path.getsize(cache_path) / (1024 * 1024)
+			logger.info(f"GWAS Catalog já baixado: {cache_path} ({size_mb:.0f}MB)")
+			return cache_path
 
 	logger.info(f"Baixando GWAS Catalog de {GWAS_URL}...")
-	logger.info("(~200MB, pode demorar alguns minutos)")
+
+	os.makedirs(os.path.dirname(cache_path) or ".", exist_ok=True)
 
 	response = requests.get(GWAS_URL, stream=True, timeout=600)
 	response.raise_for_status()
 
-	total = int(response.headers.get("content-length", 0))
-	os.makedirs(os.path.dirname(cache_path) or ".", exist_ok=True)
+	# Verificar se a resposta é ZIP
+	content_type = response.headers.get("content-type", "")
+	raw_path = cache_path + ".download"
 
-	with open(cache_path, "wb") as f:
-		downloaded = 0
+	with open(raw_path, "wb") as f:
 		for chunk in response.iter_content(chunk_size=8192):
 			f.write(chunk)
-			downloaded += len(chunk)
-			if total > 0 and downloaded % (5 * 1024 * 1024) == 0:
-				logger.info(f"  {downloaded // (1024*1024)}MB / {total // (1024*1024)}MB")
+
+	# Verificar se é ZIP e extrair
+	with open(raw_path, "rb") as f:
+		magic = f.read(4)
+
+	if magic[:2] == b"PK":
+		import zipfile
+
+		logger.info("  Resposta é ZIP, extraindo TSV...")
+		with zipfile.ZipFile(raw_path, "r") as zf:
+			tsv_files = [n for n in zf.namelist() if n.endswith(".tsv")]
+			if tsv_files:
+				with zf.open(tsv_files[0]) as src, open(cache_path, "wb") as dst:
+					import shutil
+
+					shutil.copyfileobj(src, dst)
+				logger.info(f"  Extraído: {tsv_files[0]}")
+			else:
+				# Extrair o primeiro arquivo
+				first = zf.namelist()[0]
+				with zf.open(first) as src, open(cache_path, "wb") as dst:
+					import shutil
+
+					shutil.copyfileobj(src, dst)
+				logger.info(f"  Extraído: {first}")
+		os.remove(raw_path)
+	else:
+		os.rename(raw_path, cache_path)
 
 	size_mb = os.path.getsize(cache_path) / (1024 * 1024)
-	logger.info(f"GWAS Catalog salvo: {cache_path} ({size_mb:.0f}MB)")
+	logger.info(f"GWAS Catalog TSV: {cache_path} ({size_mb:.0f}MB)")
 	return cache_path
 
 
