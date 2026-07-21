@@ -1,11 +1,26 @@
-from transformers import pipeline
 from functools import cache
 
-summarizer = pipeline("summarization", model="Falconsai/medical_summarization")
+_summarizer = None
+
+
+def _get_summarizer():
+	global _summarizer
+	if _summarizer is not None:
+		return _summarizer
+	try:
+		from transformers import pipeline
+		_summarizer = pipeline("summarization", model="Falconsai/medical_summarization")
+		return _summarizer
+	except Exception:
+		return None
 
 
 @cache
 def summary(text):
-	summary_text = summarizer(text, max_length=100, min_length=20, do_sample=False)
+	s = _get_summarizer()
+	if s is None:
+		# Fallback: retornar as primeiras 200 chars como resumo
+		return text[:200] + "..." if len(text) > 200 else text
 
-	return summary_text[0]["summary_text"]
+	result = s(text, max_length=100, min_length=20, do_sample=False)
+	return result[0]["summary_text"]
