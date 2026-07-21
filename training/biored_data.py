@@ -224,31 +224,28 @@ def create_biored_examples(documents):
 
 # ─── TBGA Parser ──────────────────────────────────────────────────────────────
 
+TBGA_RELATION_MAP = {
+	"NA": "no_relation",
+	"therapeutic": "beneficial",
+	"genomic_alterations": "harmful",
+	"biomarker": "neutral",
+}
+
+
 def parse_tbga(tbga_dir, max_examples=None):
-	"""Parse TBGA dataset (JSON lines format)."""
+	"""Parse TBGA dataset (JSON lines .txt format)."""
 	examples = []
 
 	for split in ["train", "val", "test"]:
 		fpath = None
-		for candidate in [
-			os.path.join(tbga_dir, f"{split}.json"),
-			os.path.join(tbga_dir, f"{split}.jsonl"),
-			os.path.join(tbga_dir, "TBGA", f"{split}.json"),
-			os.path.join(tbga_dir, "TBGA", f"{split}.jsonl"),
-		]:
-			if os.path.exists(candidate):
-				fpath = candidate
-				break
-
-		if not fpath:
-			# Tentar encontrar recursivamente
-			for root, _, files in os.walk(tbga_dir):
-				for fname in files:
-					if split in fname.lower() and fname.endswith((".json", ".jsonl")):
-						fpath = os.path.join(root, fname)
-						break
-				if fpath:
+		# TBGA usa nomes como TBGA_train.txt, TBGA_val.txt, TBGA_test.txt
+		for root, _, files in os.walk(tbga_dir):
+			for fname in files:
+				if split in fname.lower() and fname.endswith((".txt", ".json", ".jsonl")):
+					fpath = os.path.join(root, fname)
 					break
+			if fpath:
+				break
 
 		if not fpath:
 			logger.warning(f"  TBGA {split} não encontrado em {tbga_dir}")
@@ -256,93 +253,73 @@ def parse_tbga(tbga_dir, max_examples=None):
 
 		logger.info(f"  Parsing TBGA {split}: {fpath}")
 		count = 0
+		max_per_split = (max_examples // 3) if max_examples else None
 
 		with open(fpath, encoding="utf-8") as f:
-			# Tentar como JSON array primeiro
-			content = f.read().strip()
-			if content.startswith("["):
-				items = json.loads(content)
-			else:
-				# JSON lines
-				items = [json.loads(line) for line in content.split("\n") if line.strip()]
+			for line in f:
+				line = line.strip()
+				if not line:
+					continue
+				if max_per_split and count >= max_per_split:
+					break
 
-		for item in items:
-			if max_examples and count >= max_examples // 3:  # dividir entre splits
-				break
-
-			text = item.get("text", item.get("sentence", ""))
-			relation = item.get("relation", item.get("label", ""))
-
-			# TBGA tem relações binárias: "GDA" (associação) ou "None"/"NA"
-			if relation in ("NA", "None", "none", "no_relation", "0", 0):
-				direction = "no_relation"
-			elif relation in ("GDA", "1", 1, "positive", "Positive"):
-				# TBGA não diferencia beneficial/harmful, marcar como "neutral"
-				# (associação gene-doença confirmada, sem direção)
-				direction = "neutral"
-			else:
-				direction = "neutral"
-
-			# Tentar encontrar entidades no texto
-			head = item.get("head", item.get("entity1", item.get("h", {})))
-			tail = item.get("tail", item.get("entity2", item.get("t", {})))
-
-			if isinstance(head, dict):
-				head_text = head.get("name", head.get("text", ""))
-			elif isinstance(head, str):
-				head_text = head
-			else:
-				continue
-
-			if isinstance(tail, dict):
-				tail_text = tail.get("name", tail.get("text", ""))
-			elif isinstance(tail, str):
-				tail_text = tail
-			else:
-				continue
-
-			if not head_text or not tail_text or not text:
-				continue
-
-			# Criar entity markers
-			h_start = text.lower().find(head_text.lower())
-			t_start = text.lower().find(tail_text.lower())
-
-			if h_start == -1 or t_start == -1:
-				# Entidades não encontradas no texto, usar marcadores inline
-				marked_text = f"@{head_text}@ is associated with #{tail_text}#. {text}"
-			else:
-				h_end = h_start + len(head_text)
-				t_end = t_start + len(tail_text)
-
-				# Verificar sobreposição
-				if not (h_end <= t_start or t_end <= h_start):
+				try:
+					item = json.loads(line)
+				except json.JSONDecodeError:
 					continue
 
-				if h_start < t_start:
-					marked_text = (
-						text[:h_start] + "@" + text[h_start:h_end] + "@"
-						+ text[h_end:t_start]
-						+ "#" + text[t_start:t_end] + "#"
-						+ text[t_end:]
-					)
-				else:
-					marked_text = (
-						text[:t_start] + "#" + text[t_start:t_end] + "#"
-						+ text[t_end:h_start]
-						+ "@" + text[h_start:h_end] + "@"
-						+ text[h_end:]
-					)
+				text = item.get("text", "")
+				relation = item.get("relation", "NA")
+				direction = TBGA_RELATION_MAP.get(relation, "no_relation")
 
-			examples.append({
-				"text": marked_text[:512],
-				"entity1": head_text,
-				"entity2": tail_text,
-				"direction": direction,
-				"source": "tbga",
-				"pmid": item.get("pmid", ""),
-			})
-			count += 1
+				head = item.get("h", {})
+				tail = item.get("t", {})
+				head_text = head.get("name", "") if isinstance(head, dict) else ""
+				tail_text = tail.get("name", "") if isinstance(tail, dict) else ""
+
+				if not head_text or not tail_text or not text:
+					continue
+
+				# Usar posição do TBGA (pos = [start, length])
+				h_pos = head.get("pos", [])
+				t_pos = tail.get("pos", [])
+
+				if len(h_pos) == 2 and len(t_pos) == 2:
+					h_start, h_len = h_pos
+					t_start, t_len = t_pos
+					h_end = h_start + h_len
+					t_end = t_start + t_len
+
+					# Verificar sobreposição
+					if not (h_end <= t_start or t_end <= h_start):
+						continue
+
+					if h_start < t_start:
+						marked_text = (
+							text[:h_start] + "@" + text[h_start:h_end] + "@"
+							+ text[h_end:t_start]
+							+ "#" + text[t_start:t_end] + "#"
+							+ text[t_end:]
+						)
+					else:
+						marked_text = (
+							text[:t_start] + "#" + text[t_start:t_end] + "#"
+							+ text[t_end:h_start]
+							+ "@" + text[h_start:h_end] + "@"
+							+ text[h_end:]
+						)
+				else:
+					marked_text = f"@{head_text}@ is associated with #{tail_text}#. {text}"
+
+				examples.append({
+					"text": marked_text[:512],
+					"entity1": head_text,
+					"entity2": tail_text,
+					"direction": direction,
+					"source": "tbga",
+					"pmid": "",
+				})
+				count += 1
 
 		logger.info(f"  TBGA {split}: {count} exemplos")
 
