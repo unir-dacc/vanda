@@ -3,6 +3,31 @@ from lib.db import get_connection
 
 router = APIRouter()
 
+# Mapeamento alimento → termos que o abstract deve conter para a associação ser relevante
+FOOD_CONTEXT_TERMS = {
+	"beer": ["beer", "alcohol", "ethanol", "drink"],
+	"wine": ["wine", "alcohol", "ethanol", "drink", "polyphenol", "resveratrol"],
+	"coffee": ["coffee", "caffeine"],
+	"tea": ["tea", "catechin", "polyphenol"],
+	"milk": ["milk", "dairy", "calcium", "lactose", "vitamin d"],
+	"cheese": ["cheese", "dairy", "calcium"],
+	"egg": ["egg", "choline", "cholesterol"],
+	"fish": ["fish", "omega", "dha", "epa", "fatty acid", "seafood"],
+	"meat": ["meat", "iron", "protein", "heme"],
+	"olive oil": ["olive", "oleic", "mediterranean"],
+	"soy": ["soy", "isoflavone", "phytoestrogen"],
+}
+
+
+def get_food_search_terms(food_name):
+	"""Retorna termos de busca para validar relevância do artigo."""
+	name_lower = food_name.lower().strip()
+	# Termos específicos do alimento
+	terms = FOOD_CONTEXT_TERMS.get(name_lower, [name_lower])
+	# Sempre incluir o nome do alimento e termos nutricionais genéricos
+	terms = list(set(terms + [name_lower, "diet", "dietary", "nutrition", "nutrient", "food", "intake"]))
+	return terms
+
 
 @router.get("/food-analize/{food_name}")
 def food_analize(food_name: str):
@@ -60,6 +85,30 @@ def food_analize(food_name: str):
             detailsBeneficial = cursor.execute(query_details, (f"%{food_name}%", "beneficial", *top_genes)).fetchall()
             detailsNeutral = cursor.execute(query_details, (f"%{food_name}%", "neutral", *top_genes)).fetchall()
             detailsHarmful = cursor.execute(query_details, (f"%{food_name}%", "harmful", *top_genes)).fetchall()
+
+            # Filtrar: manter apenas associações onde o artigo menciona o alimento/nutriente
+            search_terms = get_food_search_terms(food_name)
+
+            def is_relevant(row):
+                """Verifica se o artigo menciona termos relevantes para o alimento."""
+                pmid = row["pmid"]
+                if not pmid:
+                    return True  # Sem PMID, não pode verificar — manter
+                # GWAS sempre relevante (curado manualmente)
+                if row["source"] == "gwas-catalog":
+                    return True
+                # Buscar abstract
+                art = cursor.execute(
+                    "SELECT abstract, title FROM articles WHERE pmid = ?", (str(pmid),)
+                ).fetchone()
+                if not art or not art["abstract"]:
+                    return True  # Sem abstract, manter
+                text = (art["abstract"] + " " + (art["title"] or "")).lower()
+                return any(term in text for term in search_terms)
+
+            detailsBeneficial = [r for r in detailsBeneficial if is_relevant(r)]
+            detailsNeutral = [r for r in detailsNeutral if is_relevant(r)]
+            detailsHarmful = [r for r in detailsHarmful if is_relevant(r)]
         else:
             detailsBeneficial = []
             detailsNeutral = []
