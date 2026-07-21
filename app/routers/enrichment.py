@@ -67,7 +67,7 @@ def snp_complete(rsid: str):
 
 	rsid_upper = rsid.upper()
 	cursor.execute("""
-		SELECT disease, direction, confidence, model_version, odds_ratio, p_value
+		SELECT id, disease, direction, confidence, model_version, odds_ratio, p_value
 		FROM snp_preds
 		WHERE snp = ?
 		ORDER BY confidence DESC
@@ -76,6 +76,7 @@ def snp_complete(rsid: str):
 
 	predictions = [
 		{
+			"pred_id": row["id"],
 			"disease": row["disease"],
 			"direction": row["direction"],
 			"confidence": row["confidence"],
