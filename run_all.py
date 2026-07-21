@@ -674,31 +674,16 @@ def download_articles(db_path):
 # ─── Etapa 4: NER + Classificação ─────────────────────────────────────────────
 
 def run_predictions(db_path, model_dir, min_confidence=0.0, batch_size=64, ner_batch=16):
-	"""Roda NER + classificação em artigos não processados."""
+	"""Roda NER + classificação em duas fases separadas para máxima performance."""
 	logger.info("=" * 60)
-	logger.info("ETAPA 4: NER + Classificação")
+	logger.info("ETAPA 4: NER + Classificação (2 fases)")
 	logger.info("=" * 60)
 
 	import torch
 	from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 	device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-	logger.info(f"  Dispositivo: {device}")
-
-	# Carregar modelo
-	logger.info("  Carregando PubMedBERT RE...")
-	tokenizer = AutoTokenizer.from_pretrained(model_dir)
-	model = AutoModelForSequenceClassification.from_pretrained(model_dir).to(device)
-	model.eval()
-	use_amp = device.type == "cuda"
-
 	ID2LABEL = {0: "beneficial", 1: "harmful", 2: "neutral", 3: "no_relation"}
-
-	# Carregar NER
-	logger.info("  Carregando HunFlair2 NER...")
-	from lib.ner import BioNER
-
-	ner = BioNER()
 
 	# DB
 	conn = sqlite3.connect(db_path)
@@ -712,7 +697,6 @@ def run_predictions(db_path, model_dir, min_confidence=0.0, batch_size=64, ner_b
 		)
 	""")
 
-	# Último artigo processado
 	cursor.execute("SELECT value FROM pipeline_state WHERE key = 'last_predicted_rowid'")
 	row = cursor.fetchone()
 	last_rowid = int(row[0]) if row else 0
@@ -730,8 +714,6 @@ def run_predictions(db_path, model_dir, min_confidence=0.0, batch_size=64, ner_b
 		return 0
 
 	SENT_RE = re.compile(r"(?<=[.!?])\s+")
-	inserted = 0
-	max_rowid = last_rowid
 
 	def get_windows(text):
 		sentences = [s.strip() for s in SENT_RE.split(text) if len(s.strip()) > 20]
@@ -748,7 +730,6 @@ def run_predictions(db_path, model_dir, min_confidence=0.0, batch_size=64, ner_b
 			return None
 		e1r = e1l + len(e1)
 		e2r = e2l + len(e2)
-		# Verificar sobreposição
 		if not (e1r <= e2l or e2r <= e1l):
 			return None
 		if e1l < e2l:
@@ -757,9 +738,83 @@ def run_predictions(db_path, model_dir, min_confidence=0.0, batch_size=64, ner_b
 			r = text[:e2l] + "#" + text[e2l:e2r] + "#" + text[e2r:e1l] + "@" + text[e1l:e1r] + "@" + text[e1r:]
 		return r[:512]
 
-	def classify_batch(texts):
-		if not texts:
-			return [], []
+	# ─── FASE A: NER (CPU) ─────────────────────────────────────────────────
+	logger.info("  FASE A: Extração de entidades (NER CPU)...")
+	from lib.ner import BioNER
+
+	ner = BioNER()
+
+	all_pairs = []  # [(text_marked, pmid, title, snp, disease, rowid)]
+	max_rowid = last_rowid
+
+	pbar = tqdm(total=len(rows), desc="  NER", unit=" artigos",
+				bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]")
+
+	for rowid, pmid, title, abstract in rows:
+		if _shutdown.is_set():
+			break
+		max_rowid = max(max_rowid, rowid)
+		text = f"{title}. {abstract}"
+		windows = get_windows(text)
+
+		if windows:
+			all_entities = ner.extract_entities_batch(windows)
+			for window, entities in zip(windows, all_entities):
+				snps = [e for e in entities if e["type"] == "SNP"]
+				genes = [e for e in entities if e["type"] == "Gene"]
+				diseases = [e for e in entities if e["type"] == "Disease"]
+				for gl in snps + genes:
+					for disease in diseases:
+						marked = mark_entities(window, gl["text"], disease["text"])
+						if marked:
+							all_pairs.append((
+								marked, pmid, title,
+								gl["text"].upper(), disease["text"], rowid,
+							))
+		pbar.update(1)
+		pbar.set_postfix(pairs=len(all_pairs))
+
+	pbar.close()
+	logger.info(f"  NER concluído: {len(all_pairs)} pares encontrados em {len(rows)} artigos")
+
+	# Liberar NER da memória
+	del ner
+	import gc
+	gc.collect()
+
+	if not all_pairs:
+		cursor.execute(
+			"INSERT OR REPLACE INTO pipeline_state (key, value, updated_at) "
+			"VALUES ('last_predicted_rowid', ?, CURRENT_TIMESTAMP)",
+			(str(max_rowid),),
+		)
+		conn.commit()
+		conn.close()
+		return 0
+
+	# ─── FASE B: Classificação (GPU) ───────────────────────────────────────
+	logger.info(f"  FASE B: Classificação GPU ({len(all_pairs)} pares, batch_size={batch_size})...")
+
+	tokenizer = AutoTokenizer.from_pretrained(model_dir)
+	model = AutoModelForSequenceClassification.from_pretrained(model_dir).to(device)
+	model.eval()
+	use_amp = device.type == "cuda"
+
+	from lib.entrez import batch_iterator
+
+	inserted = 0
+	db_buffer = []
+	pair_batches = list(batch_iterator(all_pairs, batch_size))
+
+	pbar = tqdm(total=len(pair_batches), desc="  GPU", unit=" batches",
+				bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]")
+
+	for batch in pair_batches:
+		if _shutdown.is_set():
+			break
+
+		texts = [p[0] for p in batch]
+
 		try:
 			enc = tokenizer(texts, max_length=256, padding=True, truncation=True, return_tensors="pt").to(device)
 			with torch.no_grad():
@@ -771,94 +826,53 @@ def run_predictions(db_path, model_dir, min_confidence=0.0, batch_size=64, ner_b
 				probs = torch.softmax(out.logits, -1)
 				preds = torch.argmax(probs, -1)
 				confs = probs.max(-1).values
-			return [ID2LABEL[p.item()] for p in preds], [c.item() for c in confs]
+
+			for i, (pred, conf) in enumerate(zip(preds, confs)):
+				label = ID2LABEL[pred.item()]
+				confidence = conf.item()
+				if label != "no_relation" and confidence >= min_confidence:
+					_, pmid, title, snp, disease, _ = batch[i]
+					db_buffer.append((
+						pmid, title, snp, disease, label,
+						round(confidence, 4), "pubmedbert-biored-v1",
+					))
+
 		except torch.cuda.OutOfMemoryError:
 			torch.cuda.empty_cache()
-			# Dividir batch ao meio e processar em 2 partes
-			mid = len(texts) // 2
-			if mid == 0:
-				logger.error("  OOM com batch_size=1. Sem VRAM suficiente.")
-				return ["no_relation"] * len(texts), [0.0] * len(texts)
-			logger.warning(f"  OOM no batch de {len(texts)}. Dividindo em 2...")
-			l1, c1 = classify_batch(texts[:mid])
-			l2, c2 = classify_batch(texts[mid:])
-			return l1 + l2, c1 + c2
+			# Processar um a um
+			for p in batch:
+				try:
+					enc = tokenizer([p[0]], max_length=256, padding=True, truncation=True, return_tensors="pt").to(device)
+					with torch.no_grad():
+						out = model(**enc)
+						pred = torch.argmax(out.logits, -1)[0]
+						conf = torch.softmax(out.logits, -1).max(-1).values[0]
+					label = ID2LABEL[pred.item()]
+					if label != "no_relation" and conf.item() >= min_confidence:
+						db_buffer.append((
+							p[1], p[2], p[3], p[4], label,
+							round(conf.item(), 4), "pubmedbert-biored-v1",
+						))
+				except Exception:
+					pass
 
-	# Processar artigos com progresso
-	pbar = tqdm(total=len(rows), desc="  Processando", unit=" artigos",
-				bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]")
+		inserted += len(texts)
 
-	pending_texts = []
-	pending_meta = []
-	db_buffer = []
-
-	for rowid, pmid, title, abstract in rows:
-		if _shutdown.is_set():
-			break
-
-		max_rowid = max(max_rowid, rowid)
-		text = f"{title}. {abstract}"
-		windows = get_windows(text)
-
-		if windows:
-			# Batch NER
-			all_entities = ner.extract_entities_batch(windows)
-
-			for window, entities in zip(windows, all_entities):
-				snps = [e for e in entities if e["type"] == "SNP"]
-				genes = [e for e in entities if e["type"] == "Gene"]
-				diseases = [e for e in entities if e["type"] == "Disease"]
-
-				for gl in snps + genes:
-					for disease in diseases:
-						marked = mark_entities(window, gl["text"], disease["text"])
-						if marked:
-							pending_texts.append(marked)
-							pending_meta.append({
-								"pmid": pmid, "title": title,
-								"snp": gl["text"].upper(), "disease": disease["text"],
-							})
-
-		# Classificar quando tiver batch suficiente
-		if len(pending_texts) >= batch_size:
-			labels, confs = classify_batch(pending_texts)
-			for meta, label, conf in zip(pending_meta, labels, confs):
-				if label != "no_relation" and conf >= min_confidence:
-					db_buffer.append((
-						meta["pmid"], meta["title"], meta["snp"],
-						meta["disease"], label, round(conf, 4), "pubmedbert-biored-v1",
-					))
-			inserted += len(pending_texts)
-			pending_texts, pending_meta = [], []
-
-		# Flush DB buffer
+		# Flush DB
 		if len(db_buffer) >= 1000:
 			cursor.executemany(
 				"INSERT INTO snp_preds (pmid, title, snp, disease, direction, confidence, model_version) "
 				"VALUES (?, ?, ?, ?, ?, ?, ?)", db_buffer
 			)
-			cursor.execute(
-				"INSERT OR REPLACE INTO pipeline_state (key, value, updated_at) "
-				"VALUES ('last_predicted_rowid', ?, CURRENT_TIMESTAMP)",
-				(str(max_rowid),),
-			)
 			conn.commit()
 			db_buffer = []
 
 		pbar.update(1)
-		pbar.set_postfix(pairs=inserted, saved=cursor.execute("SELECT COUNT(*) FROM snp_preds").fetchone()[0])
+		pbar.set_postfix(classified=inserted, saved=len(db_buffer))
+
+	pbar.close()
 
 	# Flush final
-	if pending_texts:
-		labels, confs = classify_batch(pending_texts)
-		for meta, label, conf in zip(pending_meta, labels, confs):
-			if label != "no_relation" and conf >= min_confidence:
-				db_buffer.append((
-					meta["pmid"], meta["title"], meta["snp"],
-					meta["disease"], label, round(conf, 4), "pubmedbert-biored-v1",
-				))
-		inserted += len(pending_texts)
-
 	if db_buffer:
 		cursor.executemany(
 			"INSERT INTO snp_preds (pmid, title, snp, disease, direction, confidence, model_version) "
