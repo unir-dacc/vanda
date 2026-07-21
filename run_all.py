@@ -777,10 +777,14 @@ def run_predictions(db_path, model_dir, min_confidence=0.0, batch_size=64, ner_b
 	pbar.close()
 	logger.info(f"  NER concluído: {len(all_pairs)} pares encontrados em {len(rows)} artigos")
 
-	# Liberar NER da memória
+	# Liberar NER da memória e VRAM
 	del ner
 	import gc
 	gc.collect()
+	if torch.cuda.is_available():
+		torch.cuda.empty_cache()
+		free = torch.cuda.mem_get_info(0)[0] / (1024**3)
+		logger.info(f"  NER liberado. VRAM livre: {free:.1f}GB")
 
 	if not all_pairs:
 		cursor.execute(
@@ -793,30 +797,54 @@ def run_predictions(db_path, model_dir, min_confidence=0.0, batch_size=64, ner_b
 		return 0
 
 	# ─── FASE B: Classificação (GPU) ───────────────────────────────────────
-	logger.info(f"  FASE B: Classificação GPU ({len(all_pairs)} pares, batch_size={batch_size})...")
+	# Com NER liberado, GPU tem VRAM livre — usar batch maior
+	gpu_batch = batch_size
+	if torch.cuda.is_available():
+		free_vram = torch.cuda.mem_get_info(0)[0] / (1024**3)
+		if free_vram > 4.0:
+			gpu_batch = 128
+		elif free_vram > 2.0:
+			gpu_batch = 64
+		logger.info(f"  VRAM livre: {free_vram:.1f}GB → batch_size={gpu_batch}")
+
+	logger.info(f"  FASE B: Classificação GPU ({len(all_pairs)} pares, batch_size={gpu_batch})...")
 
 	tokenizer = AutoTokenizer.from_pretrained(model_dir)
 	model = AutoModelForSequenceClassification.from_pretrained(model_dir).to(device)
 	model.eval()
 	use_amp = device.type == "cuda"
 
+	# Pré-tokenizar tudo de uma vez (CPU) para não tokenizar por batch
+	logger.info("  Pré-tokenizando...")
+	all_texts = [p[0] for p in all_pairs]
+	all_encodings = tokenizer(
+		all_texts, max_length=256, padding=True, truncation=True, return_tensors="pt"
+	)
+	del all_texts
+	logger.info(f"  Tokenização concluída: {all_encodings['input_ids'].shape}")
+
 	from lib.entrez import batch_iterator
 
 	inserted = 0
 	db_buffer = []
-	pair_batches = list(batch_iterator(all_pairs, batch_size))
+	n_batches = (len(all_pairs) + gpu_batch - 1) // gpu_batch
 
-	pbar = tqdm(total=len(pair_batches), desc="  GPU", unit=" batches",
+	pbar = tqdm(total=n_batches, desc="  GPU", unit=" batches",
 				bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]")
 
-	for batch in pair_batches:
+	for batch_idx in range(n_batches):
 		if _shutdown.is_set():
 			break
 
-		texts = [p[0] for p in batch]
+		start = batch_idx * gpu_batch
+		end = min(start + gpu_batch, len(all_pairs))
+		batch = all_pairs[start:end]
 
 		try:
-			enc = tokenizer(texts, max_length=256, padding=True, truncation=True, return_tensors="pt").to(device)
+			enc = {
+				k: v[start:end].to(device)
+				for k, v in all_encodings.items()
+			}
 			with torch.no_grad():
 				if use_amp:
 					with torch.amp.autocast("cuda"):
@@ -839,15 +867,15 @@ def run_predictions(db_path, model_dir, min_confidence=0.0, batch_size=64, ner_b
 
 		except torch.cuda.OutOfMemoryError:
 			torch.cuda.empty_cache()
-			# Processar um a um
-			for p in batch:
+			for i in range(start, end):
 				try:
-					enc = tokenizer([p[0]], max_length=256, padding=True, truncation=True, return_tensors="pt").to(device)
+					enc = {k: v[i:i+1].to(device) for k, v in all_encodings.items()}
 					with torch.no_grad():
 						out = model(**enc)
 						pred = torch.argmax(out.logits, -1)[0]
 						conf = torch.softmax(out.logits, -1).max(-1).values[0]
 					label = ID2LABEL[pred.item()]
+					p = all_pairs[i]
 					if label != "no_relation" and conf.item() >= min_confidence:
 						db_buffer.append((
 							p[1], p[2], p[3], p[4], label,
@@ -856,7 +884,7 @@ def run_predictions(db_path, model_dir, min_confidence=0.0, batch_size=64, ner_b
 				except Exception:
 					pass
 
-		inserted += len(texts)
+		inserted += len(batch)
 
 		# Flush DB
 		if len(db_buffer) >= 1000:
