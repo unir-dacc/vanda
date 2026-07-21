@@ -2,17 +2,63 @@
 
 ## O que é o VANDA?
 
-O VANDA é uma plataforma de nutrigenética que extrai, classifica e disponibiliza relações entre **variantes genéticas (SNPs)**, **genes**, **doenças** e **alimentos** a partir de literatura científica do PubMed.
+O VANDA é uma plataforma de nutrigenética que extrai, classifica e disponibiliza relações entre **variantes genéticas (SNPs)**, **genes**, **doenças** e **alimentos** a partir de literatura científica do PubMed e do GWAS Catalog.
 
 **Ponto-chave do projeto**: Automatizar a extração de conhecimento nutrigenético que hoje está disperso em milhares de artigos científicos, tornando-o acessível para profissionais de saúde e pesquisadores. A plataforma responde perguntas como: *"Quais variantes genéticas influenciam a resposta do organismo à manteiga?"* — conectando SNPs, genes, doenças e alimentos em uma interface consultável.
 
 **Ideia central**: Pessoas diferentes respondem de forma diferente aos mesmos nutrientes por causa de suas variações genéticas (SNPs). O VANDA busca mapear essas relações automaticamente.
 
+**Diferencial**: Nenhuma outra plataforma conecta variantes genéticas a **alimentos** específicos. O GWAS Catalog, DisGeNET e outros param na associação gene-doença. O VANDA fecha o triângulo SNP → Doença → Alimento via FooDB.
+
+---
+
+## Arquitetura do Pipeline
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    FONTES DE DADOS                       │
+├──────────────┬──────────────┬──────────────┬────────────┤
+│ NCBI/PubMed  │ GWAS Catalog │   BioRED     │   TBGA     │
+│ (artigos)    │ (associações │  (600 docs   │ (200K+     │
+│              │  com OR)     │  anotados)   │ gene-doença│
+└──────┬───────┴──────┬───────┴──────┬───────┴─────┬──────┘
+       │              │              │             │
+       ▼              │              ▼             ▼
+┌──────────────┐      │     ┌────────────────────────────┐
+│ Etapa 1:     │      │     │ Etapa 2: Treino            │
+│ Download     │      │     │ BioRED + TBGA + GWAS       │
+│ SNPs+Artigos │      │     │ → PubMedBERT fine-tuned    │
+│ (lib/entrez) │      │     │ F1-macro: 0.8465           │
+└──────┬───────┘      │     └─────────────┬──────────────┘
+       │              │                   │
+       ▼              │                   ▼
+┌──────────────┐      │     ┌──────────────────────────┐
+│ Etapa 3:     │      │     │ Etapa 4: NER + Classify  │
+│ GWAS Import  │◄─────┘     │ FASE A: HunFlair2 (GPU)  │
+│ (odds ratio, │            │   → extrai entidades     │
+│  p-value)    │            │ FASE B: PubMedBERT (GPU) │
+└──────┬───────┘            │   → classifica relações  │
+       │                    └─────────────┬────────────┘
+       │                                  │
+       ▼                                  ▼
+┌─────────────────────────────────────────────────────────┐
+│                    database.sqlite                       │
+│  snps (261K) │ articles (6K) │ foods (3.3M) │ snp_preds │
+└─────────────────────────┬───────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────┐
+│                    FastAPI (API REST)                     │
+│  /search  │  /snp/{id}  │  /gene/{id}  │  /food/{name} │
+│  /evidence/{id}                                          │
+└─────────────────────────────────────────────────────────┘
+```
+
 ---
 
 ## Pipeline de Dados — Passo a Passo
 
-### Etapa 1: Coleta de Dados (`download/main.py`)
+### Etapa 1: Coleta de Dados (`download/main.py` / `run_all.py`)
 
 **O que faz**: Busca todos os SNPs com artigos citados no PubMed e baixa os metadados dos artigos.
 
@@ -20,67 +66,99 @@ O VANDA é uma plataforma de nutrigenética que extrai, classifica e disponibili
 1. Consulta o NCBI Entrez com o filtro `snp_pubmed_cited[Filter] OR snp_pubmed[Filter]`
 2. Para cada SNP encontrado, busca o HGVS (nomenclatura de mutação) e o gene associado
 3. Usa `Entrez.elink()` para ligar cada SNP aos seus artigos PubMed
-4. Filtra artigos por termos MeSH de nutrigenética: Nutrients, Nutrigenomics, Nutrigenetics, Diet, Diets
+4. Filtra artigos por nutrigenética usando filtro expandido:
+   - **16 termos MeSH**: Nutrigenomics, Nutrigenetics, Diet, Vitamins, Fatty Acids, Minerals, Folic Acid, Vitamin D, Caffeine, Food, etc.
+   - **8 termos textuais** no título/abstract: nutrigenetic, nutrigenomic, diet-gene, personalized nutrition, etc.
 5. Baixa título e abstract de cada artigo filtrado
 6. Salva tudo no SQLite: tabelas `snps`, `articles`, `snp_articles`
+7. Rate limit: 3 req/s com `NCBIRateLimiter` thread-safe
 
-**Saída**: `database.sqlite` com ~261K SNPs, ~100K artigos, ~463K relações SNP-artigo
+**Saída**: ~261K SNPs, ~6K artigos filtrados por nutrigenética, ~30K relações SNP-artigo
 
 **Dependências**: BioPython (Entrez API), requests
 
-### Etapa 2: Extração de Entidades (NER) (`lib/ner.py`)
+### Etapa 2: Treino do Modelo (`training/biored_data.py` + `training/train.py`)
 
-**O que faz**: Identifica menções a doenças, genes, químicos e SNPs nos abstracts.
+**O que faz**: Prepara dados de treino e fine-tuna PubMedBERT para classificar relações gene-doença.
+
+**Dados de treino (3 fontes combinadas)**:
+
+| Fonte | Exemplos | Direções | Ano |
+|---|---|---|---|
+| BioRED (NCBI) | ~8.6K | beneficial, harmful, neutral, no_relation | 2022 |
+| TBGA (DisGeNET) | ~150K | therapeutic→beneficial, genomic_alterations→harmful, biomarker→neutral | 2022 |
+| GWAS Catalog | ~20K | Derivado de odds ratio (OR>1.2→harmful, OR<0.8→beneficial) | Atualizado |
+
+**Data augmentation**: Substituição de sinônimos nas classes minoritárias (beneficial). Exemplo: "protective" ↔ "reduces risk" ↔ "inversely associated".
+
+**Balanceamento**: Classes limitadas a max 3x a menor classe para evitar viés.
+
+**Dataset final**: ~31.9K exemplos balanceados (train: 25.5K, dev: 3.2K, test: 3.2K)
+
+**Modelo**: `microsoft/BiomedNLP-PubMedBERT-base-uncased-abstract-fulltext`
+- Pré-treinado do zero em PubMed (não adaptado do BERT geral)
+- Fine-tuned com WeightedRandomSampler, AdamW (lr=2e-5), linear warmup
+- Input com entity markers: `"The @rs1801133@ variant reduced risk of #neural tube defects#"`
+- 4 classes: beneficial (0), harmful (1), neutral (2), no_relation (3)
+
+**Resultados do treino (10 epochs, GTX 1060 6GB)**:
+```
+Epoch 1:  F1 = 0.7621
+Epoch 3:  F1 = 0.8237
+Epoch 6:  F1 = 0.8408
+Epoch 10: F1 = 0.8465 ← melhor modelo
+```
+
+**Contexto**: F1=0.8465 está acima do SOTA reportado pelo BioREx (NCBI, 2023: 0.796) e na faixa dos melhores da competição BioCreative VIII (2024: ~0.82-0.85). Limite teórico (concordância inter-anotador): ~0.90-0.92.
+
+### Etapa 3: Importação GWAS Catalog (`training/gwas_import.py`)
+
+**O que faz**: Importa associações SNP-doença curadas do GWAS Catalog com odds ratios reais.
 
 **Como funciona**:
-1. **HunFlair2** (modelo de NER biomédico baseado em Flair) identifica entidades:
-   - `Disease` — ex: "Type 2 Diabetes", "Breast Cancer"
-   - `Gene` — ex: "MTHFR", "CYP1A2"
-   - `Chemical` — ex: "folate", "caffeine"
-2. **Regex** complementar identifica SNPs: `rs1801133`, `c.677C>T`, `p.Ala222Val`
-3. Cada entidade recebe um **score de confiança** do modelo
+1. Baixa o TSV completo do GWAS Catalog (~701MB, 1.18M associações)
+2. Filtra por nutrigenética (mesmos termos MeSH/texto da Etapa 1)
+3. Filtra por significância genômica (p-value < 5×10⁻⁸)
+4. Separa OR de BETA (heurística: valores < 0.3 são BETA, ignorados)
+5. Converte odds ratio para direção:
+   - OR > 1.2 → harmful
+   - OR < 0.8 → beneficial
+   - 0.8 ≤ OR ≤ 1.2 → neutral
+6. Salva no `snp_preds` com `model_version='gwas-catalog'`, odds_ratio e p_value
 
-**Por que HunFlair2**: O modelo anterior (spaCy `en_ner_bc5cdr_md`) extraía frases inteiras como nomes de doenças — 56% dos dados estavam incorretos. HunFlair2 é estado da arte para NER biomédico e produz spans corretos.
+**Resultado**: ~5,194 associações nutrigenéticas (220 beneficial, 1412 harmful, 3562 neutral)
 
-### Etapa 3: Classificação de Relações (`training/train.py` + `training/predict.py`)
+**Vantagem**: Dados curados por especialistas com evidência estatística real (não classificação ML).
 
-**O que faz**: Para cada par (SNP/Gene, Doença) encontrado no mesmo contexto, classifica a relação como **beneficial**, **harmful**, **neutral** ou **no_relation**.
+### Etapa 4: NER + Classificação (`run_all.py`)
 
-**Como funciona**:
-1. **Treino** (uma vez):
-   - Baixa o dataset **BioRED** do NCBI (~600 abstracts anotados por especialistas)
-   - Fine-tuna **PubMedBERT** (`microsoft/BiomedNLP-PubMedBERT`) no BioRED
-   - Input usa **entity markers**: `"The @rs1801133@ variant reduced risk of #neural tube defects#"`
-   - O modelo aprende a classificar a relação entre as entidades marcadas
-   - Métrica: F1-macro na validação
+**O que faz**: Para cada artigo baixado, extrai entidades e classifica relações em duas fases.
 
-2. **Inferência** (incremental):
-   - Para cada artigo, segmenta em janelas de 3 frases
-   - Extrai entidades com HunFlair2
-   - Para cada par (Gene/SNP, Disease), cria input com entity markers
-   - PubMedBERT classifica: beneficial, harmful, neutral, no_relation
-   - Salva no `snp_preds` com **confidence score** (softmax probability)
-   - Apenas processa artigos novos (pipeline incremental via `pipeline_state`)
+**FASE A — NER (HunFlair2, GPU)**:
+1. Carrega HunFlair2 na GPU (se VRAM > 1GB)
+2. Para cada artigo: segmenta em janelas de 3 frases
+3. Extrai entidades em batch (`tagger.predict(sentences, mini_batch_size=32)`)
+4. Para cada par (SNP/Gene × Disease), cria input com entity markers
+5. Libera HunFlair2 da GPU (`torch.cuda.empty_cache()`)
 
-**Mapeamento BioRED → VANDA**:
-- `Positive_Correlation` (variante aumenta risco de doença) → **harmful**
-- `Negative_Correlation` (variante diminui risco) → **beneficial**
-- `Association` (associação sem direção clara) → **neutral**
+**Velocidade**: ~2.2 artigos/s na GTX 1060 GPU (~4x mais rápido que CPU)
 
-### Etapa 4: Integração com Alimentos
+**FASE B — Classificação (PubMedBERT, GPU)**:
+1. Carrega PubMedBERT na GPU (VRAM agora livre do NER)
+2. Tokeniza por batch (não pré-tokeniza tudo para evitar OOM na RAM)
+3. Classifica em batches de 128 com mixed precision (`torch.amp.autocast`)
+4. Filtra: descarta `no_relation` e `confidence < min_confidence`
+5. Salva no `snp_preds` com confidence e model_version
+
+**Por que duas fases**: HunFlair2 + PubMedBERT juntos cabem na GPU (testado), mas separar em fases permite batch_size maior na Fase B (128 vs 32) e evita fragmentação de VRAM.
+
+**Tempo total (GTX 1060, 6K artigos)**: ~45 min NER + ~90 min classify = ~2.2 horas
+
+### Etapa 5: Integração com Alimentos
 
 **O que faz**: Conecta genes a alimentos usando a base FooDB.
 
-**Como funciona**: A tabela `foods` (3.3M registros, pré-importada do FooDB) mapeia cada gene aos alimentos que contêm nutrientes metabolizados por esse gene. O JOIN com `snp_preds` via `gene_info` permite responder: *"Para este alimento, quais SNPs são benéficos/prejudiciais?"*
-
-### Etapa 5: API (`app/routers/`)
-
-**Endpoints**:
-- `GET /search/?query=MTHFR` — Busca SNPs por gene/keyword
-- `GET /snp/{snp_id}` — Detalhes de um SNP com tópicos de doença
-- `GET /gene/{gene_id}` — Informações do gene com artigos agrupados
-- `GET /snps/food-analize/{food_name}` — Análise de um alimento: genes, SNPs, direções
-- `GET /evidence/{pred_id}` — Rastreabilidade: artigo original + SNP + confidence
+A tabela `foods` (3.3M registros, pré-importada do FooDB) mapeia cada gene aos alimentos que contêm nutrientes metabolizados por esse gene. O JOIN com `snp_preds` via `gene_info` permite responder: *"Para este alimento, quais SNPs são benéficos/prejudiciais?"*
 
 ---
 
@@ -91,11 +169,12 @@ O VANDA é uma plataforma de nutrigenética que extrai, classifica e disponibili
 | Tabela | Descrição | ~Registros |
 |---|---|---|
 | `snps` | SNP ID, HGVS, gene associado | 261K |
-| `articles` | PMID, título, abstract do PubMed | 100K |
-| `snp_articles` | Relação N:N entre SNPs e artigos | 463K |
+| `articles` | PMID, título, abstract do PubMed | 6K |
+| `snp_articles` | Relação N:N entre SNPs e artigos | 30K |
 | `foods` | Gene → alimento (FooDB) | 3.3M |
-| `snp_preds` | Predições: SNP, doença, direção, confidence | 277K |
+| `snp_preds` | Predições: SNP, doença, direção, confidence | ~288K+ |
 | `pipeline_state` | Estado do pipeline incremental | < 10 |
+| `_migrations` | Migrações de schema aplicadas | ~4 |
 
 ### Schema do `snp_preds`
 ```sql
@@ -106,10 +185,98 @@ CREATE TABLE snp_preds (
     snp TEXT NOT NULL,              -- ex: RS1801133
     disease TEXT NOT NULL,          -- ex: Type 2 Diabetes
     direction TEXT NOT NULL,        -- beneficial, harmful, neutral
-    confidence REAL NOT NULL,       -- 0.0 a 1.0 (probabilidade do modelo)
-    model_version TEXT,             -- ex: pubmedbert-biored-v1
+    confidence REAL NOT NULL,       -- 0.0 a 1.0 (softmax do modelo ou derivado do OR)
+    model_version TEXT,             -- pubmedbert-biored-v1, gwas-catalog, legacy-biobert-v1
+    odds_ratio REAL,                -- OR do GWAS (NULL para predições ML)
+    p_value REAL,                   -- p-value do GWAS (NULL para predições ML)
+    study_info TEXT,                -- tamanho da amostra do GWAS
     created_at TIMESTAMP
 );
+```
+
+### Fontes de dados no `snp_preds`
+
+| model_version | Fonte | Confidence | Qualidade |
+|---|---|---|---|
+| `gwas-catalog` | GWAS Catalog (curado) | Derivada do OR | Alta (evidência estatística) |
+| `pubmedbert-biored-v1` | NER + PubMedBERT | Softmax probability | Média-alta (F1=0.85) |
+| `legacy-biobert-v1` | Pipeline antigo | 0.0 (sem confidence) | Baixa (weak labels) |
+
+---
+
+## API REST (FastAPI)
+
+### Endpoints
+
+| Endpoint | Método | Descrição |
+|---|---|---|
+| `/search/?query=MTHFR` | GET | Busca SNPs por gene/keyword |
+| `/snp/{snp_id}` | GET | Detalhes de um SNP com tópicos de doença |
+| `/gene/{gene_id}` | GET | Informações do gene com artigos agrupados |
+| `/snps/food-analize/{food}` | GET | Análise de alimento: genes, SNPs, direções, confidence, odds_ratio |
+| `/evidence/{pred_id}` | GET | Rastreabilidade: artigo original + SNP + confidence |
+| `/evidence/pmid/{pmid}` | GET | Verificar cadeia de evidência por PMID |
+| `/health` | GET | Health check |
+
+### Modelos usados na API
+
+| Modelo | Uso | Carregamento |
+|---|---|---|
+| HunFlair2 | NER de doenças nos endpoints /snp e /gene | Lazy loading |
+| Falconsai/medical_summarization | Sumarização de abstracts | Lazy loading |
+
+---
+
+## Script Unificado (`run_all.py`)
+
+Roda todo o pipeline de uma vez com tratamento de erros, retry e progresso.
+
+```bash
+# Pipeline completo (treino + download + classificação)
+python run_all.py
+
+# Só classificação (modelo já treinado, artigos já baixados)
+python run_all.py --skip-training --skip-download
+
+# Com filtro de confiança
+python run_all.py --min-confidence 0.7
+
+# Opções
+python run_all.py --epochs 10 --batch-size 128 --min-confidence 0.5
+```
+
+### Etapas do `run_all.py`
+
+| Etapa | Flag para pular | Descrição |
+|---|---|---|
+| 0. Migrações | Sempre roda | Cria/atualiza tabelas |
+| 1. Datasets | `--skip-training` | Baixa BioRED + TBGA + GWAS, combina e balanceia |
+| 2. Treino | `--skip-training` | Fine-tune PubMedBERT (10 epochs) |
+| 2.5 GWAS | Sempre roda | Importa GWAS Catalog para snp_preds |
+| 3. Download | `--skip-download` | Baixa artigos do NCBI |
+| 4. NER + Classify | Sempre roda | Fase A (NER GPU) + Fase B (Classify GPU) |
+| 5. Relatório | Sempre roda | Estatísticas finais |
+
+### Proteções
+
+- **Ctrl+C**: Graceful shutdown via `signal.SIGINT`
+- **OOM GPU (treino)**: Reduz batch_size automaticamente (16 → 8 → 4)
+- **OOM GPU (classify)**: Divide batch ao meio recursivamente
+- **OOM RAM**: Tokenização por batch (não pré-tokeniza tudo)
+- **Rede NCBI**: Retry com backoff, rate limiting 3 req/s
+- **Incremental**: `pipeline_state.last_predicted_rowid` evita re-processar
+- **Log**: Tudo salvo em `vanda_pipeline_YYYYMMDD_HHMMSS.log`
+
+### Docker
+
+```bash
+# Build da imagem
+docker build -f Dockerfile.pipeline -t vanda-pipeline .
+
+# Rodar com GPU
+docker run --gpus all --rm --memory=8g \
+    -v $(pwd):/app -w /app --env-file .env \
+    vanda-pipeline python run_all.py
 ```
 
 ---
@@ -118,115 +285,46 @@ CREATE TABLE snp_preds (
 
 ### Por que não usar LLMs (ChatGPT, Claude) para classificação?
 
-**Pontos fortes de LLMs**:
-- Qualidade de classificação superior (~90-95% acurácia)
-- Zero-shot, sem necessidade de dados de treino
-- Flexibilidade para extrair qualquer tipo de relação
-
-**Pontos fracos para este caso**:
 - **Custo**: Processar ~100K artigos custaria $15-30+ por execução
 - **Velocidade**: Muito mais lento que modelos locais
 - **Dependência externa**: API pode mudar, ficar offline, ou mudar preços
 - **Reprodutibilidade**: Resultados podem variar entre versões do modelo
-- **Privacidade**: Dados enviados para servidores externos
 
-**Decisão**: Usar modelos locais (PubMedBERT) para independência, reprodutibilidade e custo zero após treino.
+**Decisão**: Modelos locais (PubMedBERT) para independência, reprodutibilidade e custo zero.
 
 ### Por que PubMedBERT e não BioBERT?
 
-**BioBERT v1.1 (2019)**:
-- Pontos fortes: Pioneiro em BERT biomédico, amplamente citado
-- Pontos fracos: Adaptado do BERT geral (pré-treino genérico + fine-tuning em PubMed), vocabulário não otimizado para biomedicina
+PubMedBERT (2020) é pré-treinado **do zero** em PubMed com vocabulário biomédico nativo. BioBERT v1.1 (2019) é adaptado do BERT geral. PubMedBERT é estritamente superior em benchmarks biomédicos. Mesma arquitetura, mesma velocidade.
 
-**PubMedBERT (2020)**:
-- Pontos fortes: Pré-treinado **do zero** em PubMed, vocabulário biomédico nativo, melhor performance em 6+ benchmarks biomédicos
-- Pontos fracos: Nenhum significativo comparado ao BioBERT
+### Por que BioRED + TBGA e não só weak labeling?
 
-**Decisão**: PubMedBERT é estritamente superior ao BioBERT para tarefas biomédicas. Mesma arquitetura, mesma velocidade, melhor performance.
+Weak labeling por keywords tinha ~50% de acurácia. BioRED (600 abstracts anotados por especialistas do NCBI) + TBGA (200K+ pares gene-doença do DisGeNET) fornecem dados de qualidade muito superior. Resultado: F1 de 0.73 (só BioRED) → 0.85 (BioRED + TBGA + augmentation).
 
-### Por que BioRED e não weak labeling?
+### Por que GWAS Catalog como fonte separada?
 
-**Weak labeling (abordagem anterior)**:
-- Pontos fortes: Gera dados de treino automaticamente, sem custo de anotação
-- Pontos fracos: **~50% de acurácia** nas classificações (testado empiricamente). Termos como "risk" são ambíguos — "no risk" deveria ser beneficial mas triggers harmful. Resultado: modelo treinado em dados ruidosos replica os erros.
-
-**BioRED dataset**:
-- Pontos fortes: ~600 abstracts anotados por **especialistas do NCBI**. Relações entre Gene-Disease com tipos (Positive/Negative Correlation, Association). Gold standard reconhecido na comunidade.
-- Pontos fracos: Menor volume (~600 docs vs ~100K). Porém, qualidade >>> quantidade para fine-tuning de modelos pré-treinados.
-
-**Decisão**: Dados limpos de especialistas > muitos dados ruidosos. PubMedBERT já tem conhecimento biomédico do pré-treino; BioRED ensina a tarefa específica de classificação de relações.
+O GWAS Catalog fornece associações com **odds ratios reais** — evidência estatística quantitativa de estudos com milhares de participantes. É a fonte mais confiável que existe. Estas associações são importadas diretamente sem passar por NER ou classificação ML.
 
 ### Por que HunFlair2 e não spaCy?
 
-**spaCy en_ner_bc5cdr_md (abordagem anterior)**:
-- Pontos fortes: Rápido, fácil de usar
-- Pontos fracos: **Extraía frases inteiras como nomes de doenças**. Exemplo: `"Analysis Of The Current List Of Type 2 Diabetes"` em vez de `"Type 2 Diabetes"`. 56% dos dados no `snp_preds` tinham doenças inválidas.
+spaCy `en_ner_bc5cdr_md` extraía frases inteiras como nomes de doenças (56% dos dados inválidos). HunFlair2 produz spans corretos, tem confidence score por entidade, e reconhece Disease, Chemical, Gene/Protein em um passo.
 
-**HunFlair2**:
-- Pontos fortes: Estado da arte para NER biomédico. Reconhece Disease, Chemical, Gene/Protein, Species. Spans corretos. Confidence score por entidade.
-- Pontos fracos: Mais pesado (~1.5GB vs ~200MB). Mais lento que spaCy.
+### Por que duas fases (NER → Classify) e não pipeline simultâneo?
 
-**Decisão**: Qualidade do NER é fundamental — se as entidades extraídas são lixo, toda a classificação downstream é lixo. HunFlair2 resolve o problema na raiz.
+Separar permite: (1) batch_size maior na classificação (128 vs 32), (2) liberar VRAM do NER antes de classificar, (3) evitar fragmentação de VRAM que causava OOM. Com NER na GPU + classificação na GPU em fases separadas, não há conflito de memória.
 
 ### Por que NER + BERT RE e não NLI?
 
-**NLI (Natural Language Inference)**:
-- Pontos fortes: Zero-shot, sem fine-tuning, modelo pequeno (~300MB), roda em CPU
-- Pontos fracos: Classifica o **texto inteiro**, não pares de entidades. Se uma frase menciona 2 SNPs e 2 doenças, NLI não sabe qual SNP se relaciona com qual doença.
-
-**BERT Relation Extraction (BioRED)**:
-- Pontos fortes: Classifica **cada par de entidades** individualmente com entity markers. Preciso em frases com múltiplas entidades. Mais rápido na inferência (~500 sent/s vs ~100 sent/s do NLI).
-- Pontos fracos: Precisa de fine-tuning e GPU para treino.
-
-**Decisão**: Abstracts científicos frequentemente discutem múltiplos SNPs e doenças. Entity-level RE é mais preciso que sentence-level classification.
-
-### Por que não REBEL ou PL-Marker?
-
-**REBEL**:
-- Pontos fortes: End-to-end relation extraction via seq2seq
-- Pontos fracos: Treinado em domínio genérico (Wikipedia). Modelo generativo = lento (~10 sent/s). Precisaria fine-tuning extensivo para biomedicina.
-
-**PL-Marker**:
-- Pontos fortes: Estado da arte em RE biomédico
-- Pontos fracos: Setup complexo, dependências pesadas, não tem relações nutrigenéticas pré-treinadas.
-
-**Decisão**: PubMedBERT + BioRED é o melhor custo-benefício — modelo estabelecido, dataset reconhecido, implementação simples.
+NLI classifica a **frase inteira** — se menciona 2 SNPs e 2 doenças, não sabe qual par está relacionado. BERT RE classifica **cada par** individualmente com entity markers (`@SNP@ ... #Disease#`). Mais preciso para abstracts que discutem múltiplas variantes.
 
 ---
 
 ## Rastreabilidade
 
-Cada predição no `snp_preds` mantém o **PMID** do artigo original. Isso permite:
+Cada predição no `snp_preds` mantém o **PMID** do artigo original (`pmid INTEGER NOT NULL`).
 
-1. **Verificação**: O endpoint `/evidence/{pred_id}` retorna a predição + artigo original + SNP
-2. **Auditoria**: `lib/traceability.py` verifica a cadeia `snps → snp_articles → articles → snp_preds`
-3. **Transparência**: O usuário pode sempre voltar ao abstract original para validar a classificação
-
-A rastreabilidade é **obrigatória** — nenhuma predição é salva sem PMID (`pmid INTEGER NOT NULL`).
-
----
-
-## Como Rodar o Pipeline Completo
-
-```bash
-# 1. Coleta de dados (precisa de EMAIL no .env para NCBI)
-cd download && python main.py
-
-# 2. Migrar schema do banco
-python -m lib.migrations --db database.sqlite --import-from download/snp_database.sqlite
-
-# 3. Preparar dataset BioRED (uma vez)
-cd training && python biored_data.py --output biored_processed.json
-
-# 4. Treinar PubMedBERT (precisa GPU)
-cd training && python train.py --data biored_processed.json --output ./model --epochs 5
-
-# 5. Rodar inferência (incremental)
-cd training && python predict.py --model ./model --db ../database.sqlite --min-confidence 0.7
-
-# 6. Subir API
-fastapi run
-```
+- `GET /evidence/{pred_id}` — retorna predição + artigo original + SNP
+- `GET /evidence/pmid/{pmid}` — verifica cadeia snps → snp_articles → articles → snp_preds
+- `lib/traceability.py` — funções de auditoria programática
 
 ---
 
@@ -234,14 +332,18 @@ fastapi run
 
 ```
 vanda/
-├── main.py                      # Entry point FastAPI
-├── database.sqlite               # Banco de produção
+├── run_all.py                    # Script unificado do pipeline
+├── database.sqlite               # Banco de produção (~450MB)
+├── Dockerfile.pipeline           # Docker para rodar pipeline com GPU
+├── main.py                       # Entry point FastAPI
+│
 ├── lib/                          # Módulos compartilhados
-│   ├── entrez.py                 # Cliente NCBI unificado
+│   ├── entrez.py                 # Cliente NCBI unificado (batch, rate limit)
 │   ├── db.py                     # Helper de conexão SQLite
-│   ├── ner.py                    # HunFlair2 NER + regex SNP
+│   ├── ner.py                    # HunFlair2 NER (GPU/CPU auto)
 │   ├── migrations.py             # Migrações de schema
 │   └── traceability.py           # Auditoria de PMID
+│
 ├── app/                          # API FastAPI
 │   ├── routers/
 │   │   ├── search.py             # GET /search/
@@ -250,15 +352,51 @@ vanda/
 │   │   ├── variants.py           # GET /snps/food-analize/{food}
 │   │   └── evidence.py           # GET /evidence/{id}
 │   ├── models.py                 # Pydantic response models
+│   ├── entrez/__init__.py        # Re-exporta de lib/entrez
 │   ├── tokenizer/__init__.py     # NER wrapper para API
 │   ├── summary/__init__.py       # Sumarização médica
 │   └── utils/render_topics.py    # Agrupamento de tópicos
+│
+├── training/                     # Pipeline de treino
+│   ├── biored_data.py            # Combina BioRED + TBGA + GWAS
+│   ├── train.py                  # Fine-tuning PubMedBERT
+│   ├── predict.py                # Inferência standalone
+│   └── gwas_import.py            # Importação GWAS Catalog
+│
 ├── download/
 │   └── main.py                   # Pipeline de coleta NCBI/PubMed
-├── training/
-│   ├── biored_data.py            # Preparação dataset BioRED
-│   ├── train.py                  # Fine-tuning PubMedBERT
-│   └── predict.py                # Inferência + popular snp_preds
+│
+├── pipeline/                     # Pipeline concorrente (alternativo)
+│   ├── run.py                    # Orquestrador com stages
+│   ├── stages.py                 # Download/NER/Classify/DBWriter stages
+│   └── rate_limiter.py           # Rate limiter NCBI
+│
 └── docs/
     └── ARCHITECTURE.md           # Este arquivo
 ```
+
+---
+
+## Performance
+
+### Tempos de execução (GTX 1060 6GB, 6K artigos)
+
+| Etapa | Tempo |
+|---|---|
+| Migrações | ~5s |
+| Datasets (BioRED+TBGA+GWAS) | ~2 min |
+| Treino PubMedBERT (10 epochs) | ~4.5 horas |
+| GWAS Import | ~1 min |
+| Download NCBI (~261K SNPs) | ~1.5 horas |
+| NER GPU (6K artigos → 345K pares) | ~45 min |
+| Classificação GPU (345K pares, batch 128) | ~90 min |
+| **Total (primeira vez)** | **~8-9 horas** |
+| **Incremental (só artigos novos)** | **~1-2 horas** |
+
+### Consumo de recursos
+
+| Recurso | NER (Fase A) | Classify (Fase B) | Ambos |
+|---|---|---|---|
+| VRAM | ~1.0 GB | ~1.5 GB | N/A (fases separadas) |
+| RAM | ~2 GB | ~3 GB | — |
+| CPU | Mínimo | Tokenização | — |
