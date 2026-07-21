@@ -1,6 +1,6 @@
 import os
 
-from app.routers import disease, enrichment, evidence, gene, info, search, snp, stats, suggest, variants
+from app.routers import disease, enrichment, evidence, food_v2, gene, info, search, snp, stats, suggest, variants
 from fastapi import FastAPI
 from fastapi_pagination import add_pagination
 
@@ -31,6 +31,7 @@ app.include_router(disease.router, prefix="/disease", tags=["Disease"])
 app.include_router(info.router, prefix="/info", tags=["Info"])
 app.include_router(suggest.router, prefix="/suggest", tags=["Suggest"])
 app.include_router(stats.router, prefix="/stats", tags=["Stats"])
+app.include_router(food_v2.router, prefix="/food", tags=["Food"])
 
 
 @app.get("/health")
