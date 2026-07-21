@@ -40,17 +40,15 @@ class BioNER:
 		if self._tagger is not None:
 			return
 		from flair.data import Sentence
-		from flair.models import MultiTagger
-		from flair.tokenization import SciSpacyTokenizer
+		from flair.nn import Classifier
 
 		logger.info("Carregando HunFlair2...")
-		self._tagger = MultiTagger.load("hunflair2")
-		self._tokenizer = SciSpacyTokenizer()
+		self._tagger = Classifier.load("hunflair2")
 		self._Sentence = Sentence
 		logger.info("HunFlair2 carregado.")
 
 	def _make_sentence(self, text):
-		return self._Sentence(text, use_tokenizer=self._tokenizer)
+		return self._Sentence(text)
 
 	def extract_entities(self, text):
 		self._load()
