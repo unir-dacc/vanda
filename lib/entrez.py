@@ -57,7 +57,7 @@ class SnpData:
 MESH_TERMS = [
 	"Nutrigenomics", "Nutrigenetics", "Diet", "Diets",
 	"Nutrients", "Nutritional Genomics",
-	"Gene-Environment Interaction", "Pharmacogenetics",
+	"Gene-Environment Interaction",
 	"Vitamins", "Fatty Acids", "Minerals",
 	"Folic Acid", "Vitamin D", "Omega-3 Fatty Acids",
 	"Caffeine", "Alcohol Drinking",
