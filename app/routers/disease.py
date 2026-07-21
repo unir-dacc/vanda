@@ -12,11 +12,11 @@ def disease_analysis(disease_name: str):
 
 	# Predições para essa doença
 	cursor.execute("""
-		SELECT snp, direction, confidence, model_version, odds_ratio, p_value, id
+		SELECT snp, direction, confidence, model_version, odds_ratio, p_value, id, pmid, title
 		FROM snp_preds
 		WHERE disease LIKE ?
 		ORDER BY confidence DESC
-		LIMIT 50
+		LIMIT 100
 	""", (f"%{disease_name}%",))
 
 	predictions = [
@@ -28,6 +28,8 @@ def disease_analysis(disease_name: str):
 			"source": row["model_version"],
 			"odds_ratio": row["odds_ratio"],
 			"p_value": row["p_value"],
+			"pmid": row["pmid"],
+			"title": row["title"],
 		}
 		for row in cursor.fetchall()
 	]

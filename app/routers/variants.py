@@ -41,6 +41,8 @@ def food_analize(food_name: str):
                     COALESCE(sp.confidence, 0) AS confidence,
                     sp.odds_ratio,
                     sp.model_version AS source,
+                    sp.pmid,
+                    sp.id AS pred_id,
                     ROW_NUMBER() OVER (PARTITION BY s.gene_info ORDER BY s.snp_id) AS rn
                 FROM snp_preds sp
                 JOIN snps s
