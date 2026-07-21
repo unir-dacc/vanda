@@ -278,10 +278,13 @@ def prepare_training_data(output_path, max_tbga=50000):
 		from training.biored_data import main as data_main
 
 		class Args:
-			output = output_path
-			max_tbga = max_tbga
+			pass
 
-		data_main(Args())
+		args_obj = Args()
+		args_obj.output = output_path
+		args_obj.max_tbga = max_tbga
+
+		data_main(args_obj)
 		return True
 	except Exception as e:
 		logger.error(f"Erro ao preparar datasets: {e}")
