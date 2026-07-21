@@ -160,6 +160,21 @@ Epoch 10: F1 = 0.8465 ← melhor modelo
 
 A tabela `foods` (3.3M registros, pré-importada do FooDB) mapeia cada gene aos alimentos que contêm nutrientes metabolizados por esse gene. O JOIN com `snp_preds` via `gene_info` permite responder: *"Para este alimento, quais SNPs são benéficos/prejudiciais?"*
 
+### Etapa 6: Normalização (`processing/normalize_db.py`)
+
+**O que faz**: Limpa e padroniza os dados no banco.
+
+1. **Case normalization**: "obesity" / "Obesity" / "OBESITY" → "Obesity"
+2. **Sinônimos**: "CRC" → "Colorectal Cancer", "T2D" → "Type 2 Diabetes", "obese" → "Obesity"
+3. **Deduplicação**: Remove registros com mesmo pmid+snp+disease+direction
+4. **Remoção de legacy**: Exclui dados do pipeline antigo (BioBERT + weak labels)
+
+```bash
+python processing/normalize_db.py --db database.sqlite --remove-legacy
+```
+
+**Resultado**: 508K registros → **64.9K** (removeu 277K legacy + 166K duplicatas)
+
 ---
 
 ## Banco de Dados
@@ -172,7 +187,7 @@ A tabela `foods` (3.3M registros, pré-importada do FooDB) mapeia cada gene aos 
 | `articles` | PMID, título, abstract do PubMed | 6K |
 | `snp_articles` | Relação N:N entre SNPs e artigos | 30K |
 | `foods` | Gene → alimento (FooDB) | 3.3M |
-| `snp_preds` | Predições: SNP, doença, direção, confidence | ~288K+ |
+| `snp_preds` | Predições: SNP, doença, direção, confidence | ~64.9K |
 | `pipeline_state` | Estado do pipeline incremental | < 10 |
 | `_migrations` | Migrações de schema aplicadas | ~4 |
 
@@ -198,9 +213,10 @@ CREATE TABLE snp_preds (
 
 | model_version | Fonte | Confidence | Qualidade |
 |---|---|---|---|
-| `gwas-catalog` | GWAS Catalog (curado) | Derivada do OR | Alta (evidência estatística) |
-| `pubmedbert-biored-v1` | NER + PubMedBERT | Softmax probability | Média-alta (F1=0.85) |
-| `legacy-biobert-v1` | Pipeline antigo | 0.0 (sem confidence) | Baixa (weak labels) |
+| `gwas-catalog` | GWAS Catalog (curado, odds ratio real) | Derivada do OR | Alta (evidência estatística) |
+| `pubmedbert-biored-v1` | HunFlair2 NER + PubMedBERT RE (F1=0.85) | Softmax probability | Média-alta |
+
+**Nota**: Dados legacy (`legacy-biobert-v1`) foram removidos após re-processamento com o novo pipeline. O banco contém apenas predições de alta qualidade.
 
 ---
 
@@ -216,7 +232,51 @@ CREATE TABLE snp_preds (
 | `/snps/food-analize/{food}` | GET | Análise de alimento: genes, SNPs, direções, confidence, odds_ratio |
 | `/evidence/{pred_id}` | GET | Rastreabilidade: artigo original + SNP + confidence |
 | `/evidence/pmid/{pmid}` | GET | Verificar cadeia de evidência por PMID |
+| `/enrich/frequency/{rsid}` | GET | Frequência populacional por etnia (gnomAD) |
+| `/enrich/clinvar/{rsid}` | GET | Significância clínica e condições (ClinVar) |
+| `/enrich/compounds/{gene}` | GET | Compostos nutricionais do gene (FooDB) |
+| `/enrich/food-detail/{food}` | GET | Gene → alimento → compostos → associações |
+| `/enrich/snp-complete/{rsid}` | GET | Tudo: frequência + ClinVar + predições + alimentos |
 | `/health` | GET | Health check |
+
+### Integrações Externas
+
+| Integração | Endpoint | Fonte | Dado |
+|---|---|---|---|
+| **gnomAD** | `/enrich/frequency/{rsid}` | gnomAD GraphQL API v4 | Frequência alélica por população (African, European, East Asian, South Asian, Latino, etc.) |
+| **ClinVar** | `/enrich/clinvar/{rsid}` | NCBI Entrez (ClinVar) | Significância clínica (pathogenic, benign, risk factor), condições associadas, review status |
+| **FooDB** | `/enrich/compounds/{gene}` | Banco local (tabela `foods`) | Alimentos com compostos metabolizados pelo gene, rankeados por quantidade |
+
+### Endpoint SNP Completo
+
+O endpoint `/enrich/snp-complete/{rsid}` retorna todas as informações de um SNP em uma única chamada:
+
+```json
+{
+  "rsid": "rs9939609",
+  "gene": "FTO",
+  "frequency": {
+    "global_frequency": 0.423,
+    "populations": {
+      "African": {"frequency": 0.52},
+      "Non-Finnish European": {"frequency": 0.45},
+      "East Asian": {"frequency": 0.15}
+    }
+  },
+  "clinvar": {
+    "clinical_significance": "risk factor",
+    "conditions": ["Obesity", "Type 2 Diabetes"]
+  },
+  "predictions": [
+    {"disease": "Obesity", "direction": "harmful", "confidence": 0.91, "source": "pubmedbert-biored-v1"},
+    {"disease": "Type 2 Diabetes", "direction": "harmful", "confidence": 0.87, "source": "gwas-catalog", "odds_ratio": 1.67}
+  ],
+  "foods": [
+    {"food": "Butter", "amount": 49.55, "unit": "uM"},
+    {"food": "Cheese", "amount": 38.2, "unit": "mg/100g"}
+  ]
+}
+```
 
 ### Modelos usados na API
 
@@ -342,7 +402,8 @@ vanda/
 │   ├── db.py                     # Helper de conexão SQLite
 │   ├── ner.py                    # HunFlair2 NER (GPU/CPU auto)
 │   ├── migrations.py             # Migrações de schema
-│   └── traceability.py           # Auditoria de PMID
+│   ├── traceability.py           # Auditoria de PMID
+│   └── integrations.py           # gnomAD, ClinVar, FooDB detalhado
 │
 ├── app/                          # API FastAPI
 │   ├── routers/
@@ -350,7 +411,8 @@ vanda/
 │   │   ├── snp.py                # GET /snp/{id}
 │   │   ├── gene.py               # GET /gene/{id}
 │   │   ├── variants.py           # GET /snps/food-analize/{food}
-│   │   └── evidence.py           # GET /evidence/{id}
+│   │   ├── evidence.py           # GET /evidence/{id}
+│   │   └── enrichment.py        # GET /enrich/* (gnomAD, ClinVar, FooDB)
 │   ├── models.py                 # Pydantic response models
 │   ├── entrez/__init__.py        # Re-exporta de lib/entrez
 │   ├── tokenizer/__init__.py     # NER wrapper para API
