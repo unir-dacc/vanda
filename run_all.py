@@ -283,6 +283,9 @@ def prepare_training_data(output_path, max_tbga=50000):
 		args_obj = Args()
 		args_obj.output = output_path
 		args_obj.max_tbga = max_tbga
+		args_obj.include_gwas = True
+		args_obj.gwas_tsv = None
+		args_obj.max_gwas = 20000
 
 		data_main(args_obj)
 		return True
@@ -942,7 +945,7 @@ Exemplos:
 	parser.add_argument("--predict-only", action="store_true")
 	parser.add_argument("--min-confidence", type=float, default=0.0)
 	parser.add_argument("--batch-size", type=int, default=64)
-	parser.add_argument("--epochs", type=int, default=5)
+	parser.add_argument("--epochs", type=int, default=10)
 	args = parser.parse_args()
 
 	start_time = time.time()

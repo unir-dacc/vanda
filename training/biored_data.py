@@ -326,6 +326,213 @@ def parse_tbga(tbga_dir, max_examples=None):
 	return examples
 
 
+# ─── GWAS Catalog como dado de treino ──────────────────────────────────────────
+
+GWAS_URL_DOWNLOAD = "https://www.ebi.ac.uk/gwas/api/search/downloads/associations/v1.0.2?split=false"
+
+GWAS_NUTRITION_TRAITS = {
+	"obesity", "body mass index", "bmi", "type 2 diabetes", "diabetes",
+	"cholesterol", "ldl", "hdl", "triglyceride", "lipid",
+	"hypertension", "blood pressure", "metabolic syndrome",
+	"folate", "folic acid", "vitamin", "iron", "calcium",
+	"caffeine", "alcohol", "lactose", "celiac",
+	"omega", "fatty acid", "dietary", "nutrient", "diet",
+	"cardiovascular", "coronary", "weight", "adiposity",
+}
+
+
+def parse_gwas_for_training(gwas_tsv_path, max_examples=20000):
+	"""Converte associações GWAS em exemplos de treino com entity markers."""
+	import csv
+	import re
+
+	if not gwas_tsv_path or not os.path.exists(gwas_tsv_path):
+		# Tentar baixar
+		cache = os.path.join(RAW_DIR, "gwas_associations.tsv")
+		if not os.path.exists(cache):
+			logger.info("  Baixando GWAS Catalog...")
+			download_file(GWAS_URL_DOWNLOAD, cache)
+		gwas_tsv_path = cache
+
+	if not os.path.exists(gwas_tsv_path):
+		logger.warning("  GWAS TSV não encontrado, pulando.")
+		return []
+
+	examples = []
+	count = 0
+
+	with open(gwas_tsv_path, encoding="utf-8", errors="replace") as f:
+		reader = csv.DictReader(f, delimiter="\t")
+
+		for row in reader:
+			if max_examples and count >= max_examples:
+				break
+
+			trait = row.get("DISEASE/TRAIT", "")
+			gene = row.get("MAPPED_GENE", "") or row.get("REPORTED GENE(S)", "")
+			snps = row.get("SNPS", "")
+			or_beta = row.get("OR or BETA", "")
+			pvalue = row.get("P-VALUE", "")
+
+			if not snps or not trait or not gene:
+				continue
+
+			# Filtrar nutrigenética
+			trait_lower = trait.lower()
+			if not any(t in trait_lower for t in GWAS_NUTRITION_TRAITS):
+				continue
+
+			# Filtrar p-value significativo
+			try:
+				p = float(pvalue.strip())
+				if p > 5e-8:
+					continue
+			except (ValueError, TypeError):
+				continue
+
+			# Extrair OR e direção
+			try:
+				or_val = float(or_beta.strip())
+				if not (0.01 < or_val < 100):
+					continue
+			except (ValueError, TypeError):
+				continue
+
+			if or_val > 1.2:
+				direction = "harmful"
+			elif or_val < 0.8:
+				direction = "beneficial"
+			else:
+				direction = "neutral"
+
+			# Extrair SNP IDs
+			snp_ids = re.findall(r"rs\d+", snps)
+			if not snp_ids:
+				continue
+
+			# Extrair primeiro gene
+			gene_clean = re.split(r"[,;\s\-]+", gene.strip())[0]
+			if not gene_clean:
+				continue
+
+			snp_id = snp_ids[0]
+
+			# Criar texto sintético com entity markers
+			if direction == "harmful":
+				templates = [
+					f"The @{snp_id}@ variant in {gene_clean} is associated with increased risk of #{trait}#.",
+					f"@{snp_id}@ polymorphism was significantly associated with higher susceptibility to #{trait}#.",
+					f"Carriers of the @{snp_id}@ allele showed elevated risk for #{trait}# (OR={or_val:.2f}).",
+				]
+			elif direction == "beneficial":
+				templates = [
+					f"The @{snp_id}@ variant in {gene_clean} confers protection against #{trait}#.",
+					f"@{snp_id}@ polymorphism was associated with reduced risk of #{trait}#.",
+					f"The @{snp_id}@ allele showed a protective effect against #{trait}# (OR={or_val:.2f}).",
+				]
+			else:
+				templates = [
+					f"The @{snp_id}@ variant showed a modest association with #{trait}# (OR={or_val:.2f}).",
+					f"@{snp_id}@ in {gene_clean} was associated with #{trait}# with a small effect size.",
+				]
+
+			# Usar template baseado no hash do SNP para variedade
+			template_idx = hash(snp_id) % len(templates)
+			marked_text = templates[template_idx]
+
+			examples.append({
+				"text": marked_text[:512],
+				"entity1": snp_id,
+				"entity2": trait,
+				"direction": direction,
+				"source": "gwas",
+				"pmid": row.get("PUBMEDID", ""),
+			})
+			count += 1
+
+	logger.info(f"  GWAS para treino: {count} exemplos")
+
+	# Distribuição
+	dirs = defaultdict(int)
+	for ex in examples:
+		dirs[ex["direction"]] += 1
+	logger.info(f"  Distribuição GWAS: {dict(dirs)}")
+
+	return examples
+
+
+# ─── Data Augmentation ────────────────────────────────────────────────────────
+
+SYNONYM_MAP = {
+	"protective": ["protects against", "reduces risk of", "inversely associated with", "confers protection against"],
+	"increased risk": ["higher susceptibility", "elevated risk", "greater risk", "predisposition to"],
+	"associated with": ["linked to", "correlated with", "related to", "implicated in"],
+	"no significant": ["no evidence of", "not associated with", "no correlation with", "failed to find association with"],
+	"reduces": ["decreases", "lowers", "diminishes", "attenuates"],
+	"increases": ["elevates", "raises", "enhances", "amplifies"],
+}
+
+
+def augment_text(text):
+	"""Gera variação do texto substituindo sinônimos."""
+	import random
+
+	augmented = text
+	for original, synonyms in SYNONYM_MAP.items():
+		if original in augmented.lower():
+			replacement = random.choice(synonyms)
+			# Preservar case
+			if augmented[augmented.lower().find(original)].isupper():
+				replacement = replacement.capitalize()
+			augmented = augmented.lower().replace(original, replacement, 1)
+			# Restaurar entity markers
+			augmented = augmented.replace("@", "@").replace("#", "#")
+			break
+
+	return augmented
+
+
+def augment_minority_classes(examples, target_ratio=0.5):
+	"""Augmenta classes minoritárias com substituição de sinônimos."""
+	import random
+
+	random.seed(42)
+
+	by_direction = defaultdict(list)
+	for ex in examples:
+		by_direction[ex["direction"]].append(ex)
+
+	max_size = max(len(v) for v in by_direction.values())
+	target_size = int(max_size * target_ratio)
+
+	augmented = list(examples)
+
+	for direction, exs in by_direction.items():
+		if direction == "no_relation":
+			continue
+		if len(exs) >= target_size:
+			continue
+
+		needed = target_size - len(exs)
+		logger.info(f"  Augmentando {direction}: {len(exs)} → {len(exs) + needed} (+{needed})")
+
+		for _ in range(needed):
+			original = random.choice(exs)
+			aug_text = augment_text(original["text"])
+			if aug_text != original["text"]:
+				augmented.append({
+					"text": aug_text,
+					"entity1": original["entity1"],
+					"entity2": original["entity2"],
+					"direction": direction,
+					"source": original["source"] + "_aug",
+					"pmid": original.get("pmid", ""),
+				})
+
+	logger.info(f"  Total após augmentation: {len(augmented)} (era {len(examples)})")
+	return augmented
+
+
 # ─── Combinar e Balancear ─────────────────────────────────────────────────────
 
 def balance_dataset(examples, max_per_class=None):
@@ -443,6 +650,17 @@ def main(args):
 	all_examples.extend(tbga_examples)
 	logger.info(f"  Total TBGA: {len(tbga_examples)}")
 
+	# 3. GWAS Catalog como dado de treino
+	if args.include_gwas:
+		logger.info("=" * 50)
+		logger.info("Dataset 3: GWAS Catalog (associações com odds ratio)")
+		logger.info("=" * 50)
+		gwas_examples = parse_gwas_for_training(
+			args.gwas_tsv, max_examples=args.max_gwas
+		)
+		all_examples.extend(gwas_examples)
+		logger.info(f"  Total GWAS: {len(gwas_examples)}")
+
 	# Estatísticas por fonte
 	logger.info("=" * 50)
 	logger.info("Resumo")
@@ -455,6 +673,9 @@ def main(args):
 
 	logger.info(f"  Por fonte: {dict(by_source)}")
 	logger.info(f"  Por direção: {dict(by_direction)}")
+
+	# Data augmentation nas classes minoritárias
+	all_examples = augment_minority_classes(all_examples)
 
 	# Balancear
 	balanced = balance_dataset(all_examples)
@@ -481,8 +702,20 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument("--output", default="./training/training_data.json")
 	parser.add_argument(
-		"--max-tbga", type=int, default=50000,
-		help="Máximo de exemplos TBGA a usar (default: 50000)",
+		"--max-tbga", type=int, default=150000,
+		help="Máximo de exemplos TBGA (default: 150000)",
+	)
+	parser.add_argument(
+		"--include-gwas", action="store_true", default=True,
+		help="Incluir GWAS Catalog como dado de treino",
+	)
+	parser.add_argument(
+		"--gwas-tsv", default=None,
+		help="Caminho para GWAS TSV (baixa automaticamente se não fornecido)",
+	)
+	parser.add_argument(
+		"--max-gwas", type=int, default=20000,
+		help="Máximo de exemplos GWAS (default: 20000)",
 	)
 	args = parser.parse_args()
 	main(args)
