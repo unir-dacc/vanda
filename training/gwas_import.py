@@ -139,17 +139,41 @@ def is_nutrition_related(trait, gene):
 	return False
 
 
-def parse_or_value(or_text):
-	"""Extrai odds ratio numérico do campo 'OR or BETA'."""
+def parse_or_value(or_text, ci_text=""):
+	"""Extrai odds ratio do campo 'OR or BETA'.
+
+	Diferencia OR de BETA pelo valor e pelo CI text:
+	- OR tipicamente entre 0.3 e 5.0
+	- BETA tipicamente entre -1.0 e 1.0
+	- CI text com "increase"/"decrease"/"unit" sugere BETA
+	"""
 	if not or_text or or_text.strip() == "":
-		return None
+		return None, False
 	try:
 		val = float(or_text.strip())
-		if 0.01 < val < 100:  # OR razoável
-			return val
 	except (ValueError, TypeError):
-		pass
-	return None
+		return None, False
+
+	# Heurística para detectar BETA vs OR
+	ci_lower = ci_text.lower() if ci_text else ""
+	is_beta = (
+		abs(val) < 0.3  # Valores muito pequenos são BETA
+		or "unit" in ci_lower
+		or "increase" in ci_lower
+		or "decrease" in ci_lower
+		or "kg" in ci_lower
+		or "cm" in ci_lower
+		or "mmol" in ci_lower
+		or "mg" in ci_lower
+	)
+
+	if is_beta:
+		return None, True  # Ignorar BETAs, não são OR
+
+	if 0.1 < val < 20:  # OR razoável
+		return val, False
+
+	return None, False
 
 
 def parse_pvalue(pvalue_text):
@@ -209,8 +233,10 @@ def parse_gwas_tsv(tsv_path, min_pvalue=5e-8):
 			if not is_nutrition_related(trait, gene):
 				continue
 
-			# Extrair OR
-			or_value = parse_or_value(or_beta)
+			# Extrair OR (ignorar BETAs)
+			or_value, is_beta = parse_or_value(or_beta, ci_text)
+			if is_beta or or_value is None:
+				continue
 			direction, confidence = or_to_direction(or_value)
 
 			# Extrair SNP IDs (pode ter múltiplos separados por ';' ou 'x')
