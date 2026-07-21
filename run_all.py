@@ -814,17 +814,6 @@ def run_predictions(db_path, model_dir, min_confidence=0.0, batch_size=64, ner_b
 	model.eval()
 	use_amp = device.type == "cuda"
 
-	# Pré-tokenizar tudo de uma vez (CPU) para não tokenizar por batch
-	logger.info("  Pré-tokenizando...")
-	all_texts = [p[0] for p in all_pairs]
-	all_encodings = tokenizer(
-		all_texts, max_length=256, padding=True, truncation=True, return_tensors="pt"
-	)
-	del all_texts
-	logger.info(f"  Tokenização concluída: {all_encodings['input_ids'].shape}")
-
-	from lib.entrez import batch_iterator
-
 	inserted = 0
 	db_buffer = []
 	n_batches = (len(all_pairs) + gpu_batch - 1) // gpu_batch
@@ -841,10 +830,9 @@ def run_predictions(db_path, model_dir, min_confidence=0.0, batch_size=64, ner_b
 		batch = all_pairs[start:end]
 
 		try:
-			enc = {
-				k: v[start:end].to(device)
-				for k, v in all_encodings.items()
-			}
+			texts = [p[0] for p in batch]
+			enc = tokenizer(texts, max_length=256, padding=True, truncation=True, return_tensors="pt")
+			enc = {k: v.to(device) for k, v in enc.items()}
 			with torch.no_grad():
 				if use_amp:
 					with torch.amp.autocast("cuda"):
@@ -867,15 +855,16 @@ def run_predictions(db_path, model_dir, min_confidence=0.0, batch_size=64, ner_b
 
 		except torch.cuda.OutOfMemoryError:
 			torch.cuda.empty_cache()
-			for i in range(start, end):
+			for i in range(len(batch)):
 				try:
-					enc = {k: v[i:i+1].to(device) for k, v in all_encodings.items()}
+					enc = tokenizer([batch[i][0]], max_length=256, padding=True, truncation=True, return_tensors="pt")
+					enc = {k: v.to(device) for k, v in enc.items()}
 					with torch.no_grad():
 						out = model(**enc)
 						pred = torch.argmax(out.logits, -1)[0]
 						conf = torch.softmax(out.logits, -1).max(-1).values[0]
 					label = ID2LABEL[pred.item()]
-					p = all_pairs[i]
+					p = batch[i]
 					if label != "no_relation" and conf.item() >= min_confidence:
 						db_buffer.append((
 							p[1], p[2], p[3], p[4], label,
