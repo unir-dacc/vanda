@@ -175,6 +175,40 @@ python processing/normalize_db.py --db database.sqlite --remove-legacy
 
 **Resultado**: 508K registros → **64.9K** (removeu 277K legacy + 166K duplicatas)
 
+### Etapa 7: Limpeza Profunda (`processing/cleanup_pipeline.py`)
+
+**O que faz**: Remove dados incorretos do pipeline.
+
+1. **Genes como SNPs**: O NER extraía nomes de genes (SLC6A3, DOPAMINE TRANSPORTER) e salvava no campo `snp`. Removidos 43K registros onde `snp` não começa com "RS".
+2. **Doenças não-nutrigenéticas**: Removidas associações com Cocaine Addiction, Schizophrenia, HIV, Epilepsy, Tuberculosis, etc. (~5K registros)
+3. **Duplicatas contraditórias**: Mesmo par SNP+doença com direções diferentes → mantém apenas a de maior confidence (~4K registros)
+4. **Doenças genéricas**: "disease", "tumor", "cancer" sem contexto (~1.5K)
+
+```bash
+python processing/cleanup_pipeline.py --db database.sqlite
+```
+
+**Resultado**: 64.9K → **15.8K registros limpos e confiáveis**
+
+### Etapa 8: Normalização GWAS (`processing/normalize_gwas_diseases.py`)
+
+**O que faz**: Padroniza nomes de doenças do GWAS Catalog para fazer match com a IA.
+
+- "Type 2 Diabetes (adjusted for BMI)" → "Type 2 Diabetes"
+- "Coronary Artery Disease (myocardial Infarction...)" → "Coronary Artery Disease"
+- "Body mass index" → "Obesity"
+- Remove estudos compostos/pleiotrópicos
+
+**Resultado**: 495 → **342 doenças únicas**, overlap GWAS↔IA: 118 → **134 pares**, concordância: 31 → **50 pares**
+
+### Validação Cruzada GWAS ↔ IA
+
+134 pares SNP+Disease existem em **ambas** as fontes. Concordância:
+- **50 concordam** na direção (37%) — evidência mais forte
+- 86 discordam: GWAS "neutral" (OR~1.2) vs IA "harmful" (texto diz "risk") — perspectivas diferentes sobre efeitos pequenos
+
+**Nota sobre Pharmacogenetics**: O filtro MeSH originalmente incluía "Pharmacogenetics", o que capturava artigos sobre medicamentos (não nutrientes). Removido do filtro para evitar associações farmacogenéticas incorretas (ex: Beer → Cocaine Addiction via gene SLC6A3)
+
 ---
 
 ## Banco de Dados
@@ -187,7 +221,7 @@ python processing/normalize_db.py --db database.sqlite --remove-legacy
 | `articles` | PMID, título, abstract do PubMed | 6K |
 | `snp_articles` | Relação N:N entre SNPs e artigos | 30K |
 | `foods` | Gene → alimento (FooDB) | 3.3M |
-| `snp_preds` | Predições: SNP, doença, direção, confidence | ~64.9K |
+| `snp_preds` | Predições: SNP, doença, direção, confidence | ~15.8K |
 | `pipeline_state` | Estado do pipeline incremental | < 10 |
 | `_migrations` | Migrações de schema aplicadas | ~4 |
 
@@ -237,6 +271,10 @@ CREATE TABLE snp_preds (
 | `/enrich/compounds/{gene}` | GET | Compostos nutricionais do gene (FooDB) |
 | `/enrich/food-detail/{food}` | GET | Gene → alimento → compostos → associações |
 | `/enrich/snp-complete/{rsid}` | GET | Tudo: frequência + ClinVar + predições + alimentos |
+| `/disease/{name}` | GET | Análise de doença: SNPs, genes, alimentos relacionados |
+| `/info/food/{name}` | GET | Descrição de alimento/nutriente (MeSH) |
+| `/info/disease/{name}` | GET | Descrição de doença (MeSH) |
+| `/suggest?q=X` | GET | Autocomplete: retorna SNPs, genes, doenças, alimentos que existem no banco |
 | `/health` | GET | Health check |
 
 ### Integrações Externas
@@ -412,7 +450,10 @@ vanda/
 │   │   ├── gene.py               # GET /gene/{id}
 │   │   ├── variants.py           # GET /snps/food-analize/{food}
 │   │   ├── evidence.py           # GET /evidence/{id}
-│   │   └── enrichment.py        # GET /enrich/* (gnomAD, ClinVar, FooDB)
+│   │   ├── enrichment.py        # GET /enrich/* (gnomAD, ClinVar, FooDB)
+│   │   ├── disease.py           # GET /disease/{name}
+│   │   ├── info.py              # GET /info/* (MeSH descriptions)
+│   │   └── suggest.py           # GET /suggest (autocomplete)
 │   ├── models.py                 # Pydantic response models
 │   ├── entrez/__init__.py        # Re-exporta de lib/entrez
 │   ├── tokenizer/__init__.py     # NER wrapper para API
@@ -462,3 +503,59 @@ vanda/
 | VRAM | ~1.0 GB | ~1.5 GB | N/A (fases separadas) |
 | RAM | ~2 GB | ~3 GB | — |
 | CPU | Mínimo | Tokenização | — |
+
+---
+
+## Frontend (Next.js)
+
+Repositório separado: `vanda-f/`
+
+### Stack
+- Next.js 15 + React 19 + TypeScript
+- Shadcn/ui (12+ componentes: Command, Dialog, Badge, Card, Tabs, Tooltip, Progress, etc.)
+- Recharts (pie charts, bar charts)
+- Tailwind CSS + animações
+- i18n EN/PT-BR
+
+### Páginas
+
+| Rota | Descrição |
+|---|---|
+| `/` | Homepage: busca unificada, stats, cards top diseases/genes/foods, metodologia |
+| `/snp/[id]` | Detalhe SNP: tabs Associations/Population/Foods/Articles, ClinVar, gnomAD |
+| `/gene/[name]` | Detalhe gene: SNPs, artigos, compostos nutricionais, recomendações |
+| `/food/[name]` | Análise alimento: descrição MeSH, DataTable interativa, charts |
+| `/disease/[name]` | Análise doença: descrição MeSH, DataTable, genes, alimentos relacionados |
+| `/about` | Equipe, metodologia, instituição |
+
+### Funcionalidades do Frontend
+
+- **Busca unificada** com autocomplete real do banco (`/suggest` API)
+- **DataTable interativa**: filtro texto, filtro por efeito/fonte, ordenação, paginação, download CSV
+- **i18n EN/PT-BR**: toggle no header, todos os labels traduzidos
+- **Termos leigos**: Reliability (%), Protective/Risk, Clinical Study (GWAS), Literature Analysis (AI)
+- **Rastreabilidade**: link PMID → PubMed em cada associação
+- **Empty states**: componente reutilizável quando não há dados
+- **Glossário interativo**: tooltip explicativo para termos técnicos
+- **Gráfico de rede**: grafo canvas interativo com nós clicáveis (gene↔disease↔food)
+- **Painel de recomendações**: alimentos relacionados, efeitos protetores, fatores de risco
+
+### Equipe
+
+- **Dr. Lucas Marques da Cunha** — Orientador (Ph.D. Bioinformática, UNIR/DACC)
+- **Ricardo Alves da Silva** — Pesquisador (ricardcpu@gmail.com)
+- **Thauan Silva** — Pesquisador (thauansilva243@gmail.com)
+
+### Dados atuais (pós-limpeza)
+
+| Métrica | Valor |
+|---|---|
+| SNPs catalogados | 261K |
+| Predições limpas | 15.8K |
+| Artigos PubMed | 6K |
+| Links food-gene (FooDB) | 3.3M |
+| GWAS associations | 4.2K |
+| IA associations | 11.6K |
+| Overlap GWAS↔IA | 134 pares |
+| Concordância | 50 pares (37%) |
+| F1-score modelo | 0.8465 |
