@@ -49,8 +49,7 @@ logger = logging.getLogger("vanda")
 
 DB_PATH = os.getenv("VANDA_DB_PATH", "./database.sqlite")
 MODEL_DIR = "./training/model"
-BIORED_DATA = "./training/biored_processed.json"
-BIORED_RAW_DIR = "./training/biored_raw"
+TRAINING_DATA = "./training/training_data.json"
 NCBI_MAX_CONCURRENT = 3
 SENTINEL = object()  # Usar object() em vez de None para evitar confusão
 
@@ -258,10 +257,10 @@ def run_migrations(db_path):
 
 # ─── Etapa 1: BioRED ──────────────────────────────────────────────────────────
 
-def prepare_biored(output_path):
-	"""Baixa e processa o dataset BioRED."""
+def prepare_training_data(output_path, max_tbga=50000):
+	"""Baixa e combina BioRED + TBGA para treino."""
 	logger.info("=" * 60)
-	logger.info("ETAPA 1: Preparação do dataset BioRED")
+	logger.info("ETAPA 1: Preparação dos datasets (BioRED + TBGA)")
 	logger.info("=" * 60)
 
 	if os.path.exists(output_path):
@@ -276,15 +275,16 @@ def prepare_biored(output_path):
 
 	try:
 		sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-		from training.biored_data import main as biored_main
+		from training.biored_data import main as data_main
 
 		class Args:
 			output = output_path
+			max_tbga = max_tbga
 
-		biored_main(Args())
+		data_main(Args())
 		return True
 	except Exception as e:
-		logger.error(f"Erro ao preparar BioRED: {e}")
+		logger.error(f"Erro ao preparar datasets: {e}")
 		logger.error(traceback.format_exc())
 		return False
 
@@ -937,15 +937,15 @@ Exemplos:
 	if not args.predict_only:
 		# Etapa 1: BioRED
 		if not args.skip_training:
-			if not prepare_biored(BIORED_DATA):
-				logger.error("Falha ao preparar BioRED. Abortando.")
+			if not prepare_training_data(TRAINING_DATA):
+				logger.error("Falha ao preparar datasets. Abortando.")
 				sys.exit(1)
 
 			if _shutdown.is_set():
 				return
 
 			# Etapa 2: Treino
-			if not train_model(BIORED_DATA, args.model_dir, epochs=args.epochs):
+			if not train_model(TRAINING_DATA, args.model_dir, epochs=args.epochs):
 				logger.error("Falha no treino. Abortando.")
 				sys.exit(1)
 
