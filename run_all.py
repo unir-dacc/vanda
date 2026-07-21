@@ -443,6 +443,32 @@ def train_model(data_path, model_dir, epochs=5, batch_size=16, _retry_count=0):
 		return False
 
 
+# ─── Etapa 2.5: GWAS Catalog ──────────────────────────────────────────────────
+
+def import_gwas(db_path):
+	"""Importa associações do GWAS Catalog."""
+	logger.info("=" * 60)
+	logger.info("ETAPA 2.5: Importação GWAS Catalog")
+	logger.info("=" * 60)
+
+	try:
+		from training.gwas_import import main as gwas_main
+
+		class Args:
+			pass
+
+		args_obj = Args()
+		args_obj.db = db_path
+		args_obj.min_pvalue = 5e-8
+
+		gwas_main(args_obj)
+		return True
+	except Exception as e:
+		logger.error(f"Erro na importação GWAS: {e}")
+		logger.error(traceback.format_exc())
+		return False
+
+
 # ─── Etapa 3: Download NCBI ───────────────────────────────────────────────────
 
 def download_articles(db_path):
@@ -954,6 +980,12 @@ Exemplos:
 
 			if _shutdown.is_set():
 				return
+
+		# Etapa 2.5: GWAS Catalog
+		import_gwas(args.db)
+
+		if _shutdown.is_set():
+			return
 
 		# Etapa 3: Download
 		if not args.skip_download:
