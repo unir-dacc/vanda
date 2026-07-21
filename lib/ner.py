@@ -39,13 +39,17 @@ class BioNER:
 	def _load(self):
 		if self._tagger is not None:
 			return
+		import flair
 		from flair.data import Sentence
 		from flair.nn import Classifier
 
-		logger.info("Carregando HunFlair2...")
+		# Forçar NER para CPU para não competir com PubMedBERT pela VRAM
+		flair.device = "cpu"
+
+		logger.info("Carregando HunFlair2 (CPU)...")
 		self._tagger = Classifier.load("hunflair2")
 		self._Sentence = Sentence
-		logger.info("HunFlair2 carregado.")
+		logger.info("HunFlair2 carregado (CPU).")
 
 	def _make_sentence(self, text):
 		return self._Sentence(text)
