@@ -7,6 +7,7 @@ from lib.db import get_connection
 router = APIRouter()
 
 
+@router.get("", include_in_schema=False)
 @router.get("/")
 def platform_stats():
 	conn = get_connection()
