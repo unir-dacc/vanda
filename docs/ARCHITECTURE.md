@@ -252,15 +252,31 @@ A discordância principal (GWAS "neutral" vs IA "harmful") reflete perspectivas 
 | Duplicatas contraditórias | 4K | ~13K |
 | Doenças genéricas/lixo | 1.5K | ~12K |
 | Siglas não reconhecidas | 3K | 15.8K* |
-| Normalização + expansão siglas | — | **12.5K** |
+| Normalização + expansão siglas | — | 12.5K |
+| Validação relevância food→article | 1.2K | **11.3K** |
 
 *Nota: as etapas não são estritamente sequenciais — alguns registros são afetados por múltiplas regras.
+
+#### 6.6 — Validação de Relevância Food→Article (`processing/validate_food_relevance.py`)
+
+O FooDB mapeia genes a **todos** os alimentos que contêm qualquer composto metabolizado por aquele gene. Isso gera associações indiretas clinicamente irrelevantes. Exemplo: Beer aparecia ligado a "COVID-19 severity" porque o gene NADSYN1 (síntese de vitamina D) está listado no FooDB para cerveja, e um artigo sobre vitamina D e COVID mencionava esse gene.
+
+**Solução em duas camadas**:
+
+1. **Filtragem no banco** (`validate_food_relevance.py`): Remove predições da IA cujo abstract não menciona nenhum termo nutricional (diet, nutrient, vitamin, etc.). Remove artigos puramente farmacogenéticos. **1.2K predições removidas.**
+
+2. **Filtragem em tempo real na API** (`app/routers/variants.py`): Ao buscar um alimento, verifica se o abstract de cada artigo realmente menciona o alimento ou termos relacionados (ex: buscar "Beer" → verifica se abstract contém "beer", "alcohol", "ethanol", "drink"). Associações do GWAS sempre mantidas (curadas manualmente).
+
+**Resultado**: 12.5K → **11.3K registros**. Associações como Beer→COVID-19, Beer→Cocaine Addiction não aparecem mais na plataforma.
+
+**Limitação documentada**: A associação food→gene via FooDB é bioquímica, não clínica. Um gene pode metabolizar compostos presentes em milhares de alimentos, mas a relevância nutricional depende da quantidade e do contexto. A filtragem por abstract reduz falsos positivos mas não elimina completamente associações indiretas.
 
 **Scripts de validação**:
 ```bash
 python processing/normalize_db.py --db database.sqlite --remove-legacy
 python processing/cleanup_pipeline.py --db database.sqlite
 python processing/normalize_gwas_diseases.py --db database.sqlite
+python processing/validate_food_relevance.py --db database.sqlite
 ```
 
 ---
@@ -605,7 +621,7 @@ Repositório separado: `vanda-f/`
 | Métrica | Valor |
 |---|---|
 | SNPs catalogados | 261K |
-| Predições limpas (pós-validação) | 12.5K |
+| Predições limpas (pós-validação) | 11.3K |
 | Artigos PubMed | 6K |
 | Links food-gene (FooDB) | 3.3M |
 | GWAS associations | 3.8K |
