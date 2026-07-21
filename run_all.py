@@ -111,7 +111,7 @@ def check_prerequisites():
 
 		if torch.cuda.is_available():
 			props = torch.cuda.get_device_properties(0)
-			vram_total = props.total_mem / (1024**3)
+			vram_total = props.total_memory / (1024**3)
 			vram_free = torch.cuda.mem_get_info(0)[0] / (1024**3)
 			logger.info(f"  GPU: {props.name} ({vram_total:.1f}GB VRAM, {vram_free:.1f}GB livre)")
 			if vram_total < 4:
