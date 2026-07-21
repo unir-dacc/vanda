@@ -40,16 +40,30 @@ class BioNER:
 		if self._tagger is not None:
 			return
 		import flair
+		import torch
 		from flair.data import Sentence
 		from flair.nn import Classifier
 
-		# Forçar NER para CPU para não competir com PubMedBERT pela VRAM
-		flair.device = "cpu"
+		# Usar GPU se disponível e com VRAM suficiente, senão CPU
+		if torch.cuda.is_available():
+			try:
+				free_vram = torch.cuda.mem_get_info(0)[0] / (1024**3)
+				if free_vram > 1.0:
+					flair.device = torch.device("cuda")
+					logger.info(f"Carregando HunFlair2 (GPU, {free_vram:.1f}GB livre)...")
+				else:
+					flair.device = torch.device("cpu")
+					logger.info("Carregando HunFlair2 (CPU, VRAM insuficiente)...")
+			except Exception:
+				flair.device = torch.device("cpu")
+				logger.info("Carregando HunFlair2 (CPU)...")
+		else:
+			flair.device = torch.device("cpu")
+			logger.info("Carregando HunFlair2 (CPU)...")
 
-		logger.info("Carregando HunFlair2 (CPU)...")
 		self._tagger = Classifier.load("hunflair2")
 		self._Sentence = Sentence
-		logger.info("HunFlair2 carregado (CPU).")
+		logger.info(f"HunFlair2 carregado ({flair.device}).")
 
 	def _make_sentence(self, text):
 		return self._Sentence(text)
