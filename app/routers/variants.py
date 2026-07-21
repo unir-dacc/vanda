@@ -3,84 +3,29 @@ from lib.db import get_connection
 
 router = APIRouter()
 
-# Mapeamento alimento → termos ESPECÍFICOS que o abstract deve conter
-# Sem termos genéricos como "diet", "food", "intake" que criam falsos positivos
+# Mapeamento alimento → termos que o abstract deve conter para a associação ser relevante
 FOOD_CONTEXT_TERMS = {
-	"beer": ["beer", "alcohol", "ethanol", "alcoholic beverage"],
-	"wine": ["wine", "alcohol", "ethanol", "resveratrol", "polyphenol"],
-	"grape wine": ["wine", "alcohol", "ethanol", "resveratrol", "grape"],
+	"beer": ["beer", "alcohol", "ethanol", "drink"],
+	"wine": ["wine", "alcohol", "ethanol", "drink", "polyphenol", "resveratrol"],
 	"coffee": ["coffee", "caffeine"],
-	"arabica coffee": ["coffee", "caffeine"],
-	"robusta coffee": ["coffee", "caffeine"],
-	"tea": ["tea", "catechin", "polyphenol", "green tea"],
-	"milk (cow)": ["milk", "dairy", "lactose", "calcium", "vitamin d"],
-	"milk": ["milk", "dairy", "lactose", "calcium"],
+	"tea": ["tea", "catechin", "polyphenol"],
+	"milk": ["milk", "dairy", "calcium", "lactose", "vitamin d"],
 	"cheese": ["cheese", "dairy", "calcium"],
 	"egg": ["egg", "choline", "cholesterol"],
-	"fish": ["fish", "omega-3", "dha", "epa", "fatty acid", "seafood"],
-	"fish oil": ["fish oil", "omega-3", "dha", "epa"],
-	"meat": ["meat", "red meat", "heme iron"],
-	"olive oil": ["olive oil", "oleic", "mediterranean"],
-	"soy bean": ["soy", "soybean", "isoflavone"],
-	"soy": ["soy", "soybean", "isoflavone"],
-	"corn": ["corn", "maize"],
-	"carrot": ["carrot", "carotenoid", "beta-carotene"],
-	"apple": ["apple", "quercetin", "pectin"],
-	"parsley": ["parsley", "apigenin"],
-	"spinach": ["spinach", "folate", "iron"],
-	"broccoli": ["broccoli", "sulforaphane", "cruciferous"],
-	"tomato": ["tomato", "lycopene"],
-	"garlic": ["garlic", "allicin"],
-	"onion": ["onion", "quercetin"],
-	"rice": ["rice", "arsenic"],
-	"wheat": ["wheat", "gluten", "whole grain", "whole-grain", "cereal"],
-	"bread": ["bread", "gluten", "whole grain", "whole-grain"],
-	"oat": ["oat", "beta-glucan", "fiber"],
-	"salmon": ["salmon", "omega-3", "dha", "epa"],
-	"tuna": ["tuna", "omega-3", "mercury"],
-	"chicken": ["chicken", "poultry"],
-	"pork": ["pork", "meat"],
-	"butter": ["butter", "saturated fat", "dairy"],
-	"chocolate": ["chocolate", "cocoa", "flavanol"],
-	"almond": ["almond", "nut", "vitamin e"],
-	"walnut": ["walnut", "nut", "omega-3"],
-	"peanut": ["peanut", "nut", "aflatoxin"],
-	"orange": ["orange", "citrus", "vitamin c"],
-	"lemon": ["lemon", "citrus", "vitamin c"],
-	"banana": ["banana", "potassium"],
-	"avocado": ["avocado", "monounsaturated"],
-	"coconut oil": ["coconut", "lauric acid", "mct"],
-	"sugar": ["sugar", "sucrose", "glucose", "fructose"],
-	"honey": ["honey", "fructose"],
-	"salt": ["salt", "sodium", "nacl"],
-	"pepper": ["pepper", "capsaicin", "piperine"],
-	"turmeric": ["turmeric", "curcumin"],
-	"ginger": ["ginger", "gingerol"],
-	"cinnamon": ["cinnamon"],
-	"vitamin d": ["vitamin d", "cholecalciferol", "25-hydroxyvitamin"],
-	"vitamin c": ["vitamin c", "ascorbic acid"],
-	"vitamin e": ["vitamin e", "tocopherol"],
-	"vitamin a": ["vitamin a", "retinol", "beta-carotene"],
-	"vitamin b12": ["vitamin b12", "cobalamin"],
-	"folate": ["folate", "folic acid", "methylfolate"],
-	"iron": ["iron", "ferritin", "heme", "anemia"],
-	"zinc": ["zinc"],
-	"selenium": ["selenium"],
-	"calcium": ["calcium", "bone"],
-	"magnesium": ["magnesium"],
-	"potassium": ["potassium"],
-	"omega-3": ["omega-3", "dha", "epa", "fish oil"],
+	"fish": ["fish", "omega", "dha", "epa", "fatty acid", "seafood"],
+	"meat": ["meat", "iron", "protein", "heme"],
+	"olive oil": ["olive", "oleic", "mediterranean"],
+	"soy": ["soy", "isoflavone", "phytoestrogen"],
 }
 
 
 def get_food_search_terms(food_name):
-	"""Retorna termos de busca ESPECÍFICOS do alimento (sem genéricos)."""
+	"""Retorna termos de busca para validar relevância do artigo."""
 	name_lower = food_name.lower().strip()
-	# Só termos específicos — sem "diet", "food", "intake" que são genéricos demais
+	# Termos específicos do alimento
 	terms = FOOD_CONTEXT_TERMS.get(name_lower, [name_lower])
-	# Adicionar o nome do alimento mas NÃO termos genéricos
-	if name_lower not in terms:
-		terms = terms + [name_lower]
+	# Sempre incluir o nome do alimento e termos nutricionais genéricos
+	terms = list(set(terms + [name_lower, "diet", "dietary", "nutrition", "nutrient", "food", "intake"]))
 	return terms
 
 
