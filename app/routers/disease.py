@@ -12,18 +12,21 @@ def disease_analysis(disease_name: str):
 
 	# Predições para essa doença
 	cursor.execute("""
-		SELECT snp, direction, confidence, model_version, odds_ratio, p_value, id, pmid, title
-		FROM snp_preds
-		WHERE disease LIKE ?
+		SELECT sp.snp, sp.direction, sp.confidence, sp.model_version, sp.odds_ratio, sp.p_value,
+			   sp.id, sp.pmid, sp.title, COALESCE(s.gene_info, '') AS gene_info
+		FROM snp_preds sp
+		LEFT JOIN snps s ON REPLACE(LOWER(sp.snp), 'rs', '') = s.snp_id
+		WHERE sp.disease LIKE ?
 		ORDER BY
-			CASE WHEN model_version = 'gwas-catalog' THEN 0 ELSE 1 END,
-			confidence DESC
+			CASE WHEN sp.model_version = 'gwas-catalog' THEN 0 ELSE 1 END,
+			sp.confidence DESC
 	""", (f"%{disease_name}%",))
 
 	predictions = [
 		{
 			"pred_id": row["id"],
 			"snp": row["snp"],
+			"gene_info": row["gene_info"],
 			"direction": row["direction"],
 			"confidence": row["confidence"],
 			"source": row["model_version"],
