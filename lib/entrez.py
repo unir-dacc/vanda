@@ -54,27 +54,23 @@ class SnpData:
 		return hgvs
 
 
-MESH_TERMS = [
-	"Nutrigenomics", "Nutrigenetics", "Diet", "Diets",
+NUTRITION_MESH = [
+	"Nutrigenomics", "Nutrigenetics", "Diet",
 	"Nutrients", "Nutritional Genomics",
-	"Gene-Environment Interaction",
 	"Vitamins", "Fatty Acids", "Minerals",
 	"Folic Acid", "Vitamin D", "Omega-3 Fatty Acids",
 	"Caffeine", "Alcohol Drinking",
 	"Food", "Feeding Behavior",
+	"Micronutrients", "Dietary Supplements",
+	"Nutritional Status",
 ]
 
-TEXT_TERMS = [
-	"nutrigenetic", "nutrigenomic", "diet-gene",
-	"gene-diet", "gene-nutrient", "nutrient-gene",
-	"personalized nutrition", "precision nutrition",
-]
+SNP_MESH = "Polymorphism, Single Nucleotide"
 
 
 def get_filter_term():
-	mesh_part = " OR ".join(f'"{t}"[MeSH Terms]' for t in MESH_TERMS)
-	text_part = " OR ".join(f'"{t}"[Title/Abstract]' for t in TEXT_TERMS)
-	return f" AND ({mesh_part} OR {text_part})"
+	nutrition_part = " OR ".join(f'"{t}"[MeSH Terms]' for t in NUTRITION_MESH)
+	return f' AND ({nutrition_part}) AND "{SNP_MESH}"[MeSH Terms]'
 
 
 def _parse_article(article):
