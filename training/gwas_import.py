@@ -190,10 +190,10 @@ def or_to_direction(or_value):
 	"""Converte odds ratio para direção."""
 	if or_value is None:
 		return "neutral", 0.5
-	if or_value > 1.2:
+	if or_value > 1.05:
 		confidence = min(or_value / 3.0, 0.99)
 		return "harmful", round(confidence, 4)
-	elif or_value < 0.8:
+	elif or_value < 0.95:
 		confidence = min(1.0 / or_value / 3.0, 0.99)
 		return "beneficial", round(confidence, 4)
 	else:
