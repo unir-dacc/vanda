@@ -66,9 +66,10 @@ O VANDA é uma plataforma de nutrigenética que extrai, classifica e disponibili
 1. Consulta o NCBI Entrez com o filtro `snp_pubmed_cited[Filter] OR snp_pubmed[Filter]`
 2. Para cada SNP encontrado, busca o HGVS (nomenclatura de mutação) e o gene associado
 3. Usa `Entrez.elink()` para ligar cada SNP aos seus artigos PubMed
-4. Filtra artigos por nutrigenética usando filtro expandido:
-   - **16 termos MeSH**: Nutrigenomics, Nutrigenetics, Diet, Vitamins, Fatty Acids, Minerals, Folic Acid, Vitamin D, Caffeine, Food, etc.
-   - **8 termos textuais** no título/abstract: nutrigenetic, nutrigenomic, diet-gene, personalized nutrition, etc.
+4. Filtra artigos por nutrigenética usando **duplo filtro MeSH** (ambos atribuídos por indexadores humanos do NLM):
+   - **Nutrição MeSH** (19 termos): Nutrigenomics, Nutrigenetics, Diet, Nutrients, Vitamins, Fatty Acids, Minerals, Folic Acid, Vitamin D, Omega-3, Caffeine, Food, Feeding Behavior, Micronutrients, Dietary Supplements, Nutritional Status, etc.
+   - **SNP MeSH**: `"Polymorphism, Single Nucleotide"[MeSH]` — garante que o artigo realmente estuda polimorfismos genéticos
+   - **Resultado**: ~8.6K artigos de alta precisão (vs ~37K com filtro anterior por texto livre que capturava falsos positivos)
 5. Baixa título e abstract de cada artigo filtrado
 6. Salva tudo no SQLite: tabelas `snps`, `articles`, `snp_articles`
 7. Rate limit: 3 req/s com `NCBIRateLimiter` thread-safe
