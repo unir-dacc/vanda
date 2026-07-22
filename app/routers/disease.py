@@ -15,8 +15,9 @@ def disease_analysis(disease_name: str):
 		SELECT snp, direction, confidence, model_version, odds_ratio, p_value, id, pmid, title
 		FROM snp_preds
 		WHERE disease LIKE ?
-		ORDER BY confidence DESC
-		LIMIT 100
+		ORDER BY
+			CASE WHEN model_version = 'gwas-catalog' THEN 0 ELSE 1 END,
+			confidence DESC
 	""", (f"%{disease_name}%",))
 
 	predictions = [

@@ -70,8 +70,9 @@ def snp_complete(rsid: str):
 		SELECT id, disease, direction, confidence, model_version, odds_ratio, p_value
 		FROM snp_preds
 		WHERE snp = ?
-		ORDER BY confidence DESC
-		LIMIT 20
+		ORDER BY
+			CASE WHEN model_version = 'gwas-catalog' THEN 0 ELSE 1 END,
+			confidence DESC
 	""", (rsid_upper,))
 
 	predictions = [
