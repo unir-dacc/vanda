@@ -493,17 +493,30 @@ def download_articles(db_path):
 		get_filter_term,
 	)
 
-	# Rate limiter
+	# Rate limiter — 1 req/s para evitar erros de conexão
 	_rate_lock = threading.Lock()
 	_last_call = [0.0]
 
 	def rate_limit():
 		with _rate_lock:
 			now = time.monotonic()
-			wait = _last_call[0] + (1.0 / NCBI_MAX_CONCURRENT) - now
+			wait = _last_call[0] + 1.0 - now  # 1 segundo entre requisições
 			if wait > 0:
 				time.sleep(wait)
 			_last_call[0] = time.monotonic()
+
+	def entrez_retry(fn, max_retries=3):
+		"""Executa chamada Entrez com retry e backoff."""
+		for attempt in range(max_retries):
+			rate_limit()
+			try:
+				return fn()
+			except Exception as e:
+				if attempt == max_retries - 1:
+					raise
+				wait = 2 ** (attempt + 1)
+				logger.warning(f"  Retry {attempt+1}/{max_retries} após erro: {str(e)[:80]}. Aguardando {wait}s...")
+				time.sleep(wait)
 
 	conn = sqlite3.connect(db_path, check_same_thread=False)
 	db_lock = threading.Lock()
@@ -582,18 +595,22 @@ def download_articles(db_path):
 	articles_total = 0
 	pbar = tqdm(total=len(batches), desc="  Artigos", unit=" batches")
 
-	def fetch_batch(snp_batch):
+	# Processar sequencialmente com retry (sem paralelismo para evitar erros NCBI)
+	for snp_batch in batches:
 		if _shutdown.is_set():
-			return {}
-		rate_limit()
+			break
+
 		try:
-			with Entrez.elink(
-				dbfrom="snp", db="pubmed", id=",".join(snp_batch), retmode="xml"
-			) as handle:
-				pubmed_data = Entrez.read(handle)
+			# elink com retry
+			pubmed_data = entrez_retry(lambda: (
+				Entrez.read(Entrez.elink(
+					dbfrom="snp", db="pubmed", id=",".join(snp_batch), retmode="xml"
+				))
+			))
 		except Exception as e:
-			logger.warning(f"  Erro elink: {e}")
-			return {}
+			logger.warning(f"  Erro elink após retries: {str(e)[:80]}")
+			pbar.update(1)
+			continue
 
 		snp_to_pubmed = {}
 		all_pmids = set()
@@ -606,64 +623,55 @@ def download_articles(db_path):
 					snp_to_pubmed.setdefault(snp, []).append(pmid)
 
 		if not all_pmids:
-			return {}
+			pbar.update(1)
+			continue
 
-		# Filtrar nutrigenética
+		# Filtrar nutrigenética com retry
 		filtered = set()
 		for pmid_batch in batch_iterator(list(all_pmids), 500):
-			rate_limit()
 			query = "(" + " OR ".join(pmid_batch) + ")" + get_filter_term()
 			try:
-				with Entrez.esearch(db="pubmed", term=query, retmode="xml", retmax=10000) as handle:
-					filtered.update(Entrez.read(handle).get("IdList", []))
+				result = entrez_retry(lambda: (
+					Entrez.read(Entrez.esearch(db="pubmed", term=query, retmode="xml", retmax=10000))
+				))
+				filtered.update(result.get("IdList", []))
 			except Exception:
 				pass
 
 		if not filtered:
-			return {}
+			pbar.update(1)
+			continue
 
-		# Baixar artigos
+		# Baixar artigos com retry
 		articles = {}
 		for pmid_batch in batch_iterator(list(filtered), 100):
-			rate_limit()
 			try:
-				with Entrez.efetch(db="pubmed", id=pmid_batch, rettype="medline", retmode="xml") as handle:
-					data = Entrez.read(handle)
+				data = entrez_retry(lambda: (
+					Entrez.read(Entrez.efetch(db="pubmed", id=pmid_batch, rettype="medline", retmode="xml"))
+				))
 				for art in data.get("PubmedArticle", []):
 					parsed = _parse_article(art)
 					if parsed["abstract"]:
 						articles[parsed["pmid"]] = parsed
 			except Exception as e:
-				logger.warning(f"  Erro efetch: {e}")
+				logger.warning(f"  Erro efetch após retries: {str(e)[:80]}")
 
-		return {"articles": articles, "snp_to_pubmed": snp_to_pubmed}
-
-	# Processar em paralelo mas com rate limiting
-	with ThreadPoolExecutor(max_workers=NCBI_MAX_CONCURRENT) as executor:
-		futures = {executor.submit(fetch_batch, b): b for b in batches}
-		for future in as_completed(futures):
-			if _shutdown.is_set():
-				break
-			result = future.result()
-			if result:
-				arts = result.get("articles", {})
-				stp = result.get("snp_to_pubmed", {})
-				with db_lock:
-					for pmid, article in arts.items():
-						cursor.execute(
-							"INSERT OR IGNORE INTO articles (pmid, title, abstract) VALUES (?, ?, ?)",
-							(article["pmid"], article["title"], article["abstract"]),
-						)
-					for snp, pmids in stp.items():
-						for pmid in pmids:
-							if pmid in arts:
-								cursor.execute(
-									"INSERT OR IGNORE INTO snp_articles (snp_id, pmid) VALUES (?, ?)",
-									(snp, pmid),
-								)
-					conn.commit()
-				articles_total += len(arts)
-			pbar.update(1)
+		# Salvar no banco
+		for pmid, article in articles.items():
+			cursor.execute(
+				"INSERT OR IGNORE INTO articles (pmid, title, abstract) VALUES (?, ?, ?)",
+				(article["pmid"], article["title"], article["abstract"]),
+			)
+		for snp, pmids in snp_to_pubmed.items():
+			for pmid in pmids:
+				if pmid in articles:
+					cursor.execute(
+						"INSERT OR IGNORE INTO snp_articles (snp_id, pmid) VALUES (?, ?)",
+						(snp, pmid),
+					)
+		conn.commit()
+		articles_total += len(articles)
+		pbar.update(1)
 
 	pbar.close()
 	conn.close()
