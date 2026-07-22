@@ -85,8 +85,8 @@ O VANDA é uma plataforma de nutrigenética que extrai, classifica e disponibili
 
 | Fonte | Exemplos | Direções | Ano |
 |---|---|---|---|
-| BioRED (NCBI) | ~8.6K | beneficial, harmful, neutral, no_relation | 2022 |
-| TBGA (DisGeNET) | ~150K | therapeutic→beneficial, genomic_alterations→harmful, biomarker→neutral | 2022 |
+| BioRED (NCBI) [2] | ~8.6K | beneficial, harmful, neutral, no_relation | 2022 |
+| TBGA (DisGeNET) [3] | ~150K | therapeutic→beneficial, genomic_alterations→harmful, biomarker→neutral | 2022 |
 | GWAS Catalog | ~20K | Derivado de odds ratio (OR>1.2→harmful, OR<0.8→beneficial) | Atualizado |
 
 **Data augmentation**: Substituição de sinônimos nas classes minoritárias (beneficial). Exemplo: "protective" ↔ "reduces risk" ↔ "inversely associated".
@@ -95,10 +95,10 @@ O VANDA é uma plataforma de nutrigenética que extrai, classifica e disponibili
 
 **Dataset final**: ~31.9K exemplos balanceados (train: 25.5K, dev: 3.2K, test: 3.2K)
 
-**Modelo**: `microsoft/BiomedNLP-PubMedBERT-base-uncased-abstract-fulltext`
-- Pré-treinado do zero em PubMed (não adaptado do BERT geral)
+**Modelo**: `microsoft/BiomedNLP-PubMedBERT-base-uncased-abstract-fulltext` [1]
+- Pré-treinado do zero em PubMed (não adaptado do BERT geral, Gu et al. 2021)
 - Fine-tuned com WeightedRandomSampler, AdamW (lr=2e-5), linear warmup
-- Input com entity markers: `"The @rs1801133@ variant reduced risk of #neural tube defects#"`
+- Input com entity markers seguindo o formato BioRED [2]: `"The @rs1801133@ variant reduced risk of #neural tube defects#"`
 - 4 classes: beneficial (0), harmful (1), neutral (2), no_relation (3)
 
 **Resultados do treino (10 epochs, GTX 1060 6GB)**:
@@ -116,7 +116,7 @@ Epoch 10: F1 = 0.8465 ← melhor modelo
 **O que faz**: Importa associações SNP-doença curadas do GWAS Catalog com odds ratios reais.
 
 **Como funciona**:
-1. Baixa o TSV completo do GWAS Catalog (~701MB, 1.18M associações)
+1. Baixa o TSV completo do GWAS Catalog [4] (~701MB, 1.18M associações, Sollis et al. 2023)
 2. Filtra por nutrigenética (mesmos termos MeSH/texto da Etapa 1)
 3. Filtra por significância genômica (p-value < 5×10⁻⁸)
 4. Separa OR de BETA (heurística: valores < 0.3 são BETA, ignorados)
@@ -135,7 +135,7 @@ Epoch 10: F1 = 0.8465 ← melhor modelo
 **O que faz**: Para cada artigo baixado, extrai entidades e classifica relações em duas fases.
 
 **FASE A — NER (HunFlair2, GPU)**:
-1. Carrega HunFlair2 na GPU (se VRAM > 1GB)
+1. Carrega HunFlair2 [5] na GPU (se VRAM > 1GB, Sänger et al. 2024)
 2. Para cada artigo: segmenta em janelas de 3 frases
 3. Extrai entidades em batch (`tagger.predict(sentences, mini_batch_size=32)`)
 4. Para cada par (SNP/Gene × Disease), cria input com entity markers
@@ -158,7 +158,7 @@ Epoch 10: F1 = 0.8465 ← melhor modelo
 
 **O que faz**: Conecta genes a alimentos usando a base FooDB.
 
-A tabela `foods` (3.3M registros, pré-importada do FooDB) mapeia cada gene aos alimentos que contêm nutrientes metabolizados por esse gene. O JOIN com `snp_preds` via `gene_info` permite responder: *"Para este alimento, quais SNPs são benéficos/prejudiciais?"*
+A tabela `foods` (3.3M registros, pré-importada do FooDB [7]) mapeia cada gene aos alimentos que contêm nutrientes metabolizados por esse gene. O JOIN com `snp_preds` via `gene_info` permite responder: *"Para este alimento, quais SNPs são benéficos/prejudiciais?"*
 
 ### Etapa 6: Validação e Controle de Qualidade dos Dados
 
@@ -351,8 +351,8 @@ CREATE TABLE snp_preds (
 
 | Integração | Endpoint | Fonte | Dado |
 |---|---|---|---|
-| **gnomAD** | `/enrich/frequency/{rsid}` | gnomAD GraphQL API v4 | Frequência alélica por população (African, European, East Asian, South Asian, Latino, etc.) |
-| **ClinVar** | `/enrich/clinvar/{rsid}` | NCBI Entrez (ClinVar) | Significância clínica (pathogenic, benign, risk factor), condições associadas, review status |
+| **gnomAD** [6] | `/enrich/frequency/{rsid}` | gnomAD GraphQL API v4 (Karczewski et al. 2020) | Frequência alélica por população (African, European, East Asian, South Asian, Latino, etc.) |
+| **ClinVar** [11] | `/enrich/clinvar/{rsid}` | NCBI Entrez (Landrum et al. 2018) | Significância clínica (pathogenic, benign, risk factor), condições associadas, review status |
 | **FooDB** | `/enrich/compounds/{gene}` | Banco local (tabela `foods`) | Alimentos com compostos metabolizados pelo gene, rankeados por quantidade |
 
 ### Endpoint SNP Completo
@@ -462,19 +462,19 @@ docker run --gpus all --rm --memory=8g \
 
 ### Por que PubMedBERT e não BioBERT?
 
-PubMedBERT (2020) é pré-treinado **do zero** em PubMed com vocabulário biomédico nativo. BioBERT v1.1 (2019) é adaptado do BERT geral. PubMedBERT é estritamente superior em benchmarks biomédicos. Mesma arquitetura, mesma velocidade.
+PubMedBERT [1] (2021) é pré-treinado **do zero** em PubMed com vocabulário biomédico nativo. BioBERT v1.1 [8] (2019) é adaptado do BERT geral. Gu et al. demonstraram que o pré-treino from-scratch em domínio específico supera a adaptação de modelos genéricos em múltiplos benchmarks biomédicos. Mesma arquitetura, mesma velocidade, melhor performance.
 
 ### Por que BioRED + TBGA e não só weak labeling?
 
-Weak labeling por keywords tinha ~50% de acurácia. BioRED (600 abstracts anotados por especialistas do NCBI) + TBGA (200K+ pares gene-doença do DisGeNET) fornecem dados de qualidade muito superior. Resultado: F1 de 0.73 (só BioRED) → 0.85 (BioRED + TBGA + augmentation).
+Weak labeling por keywords tinha ~50% de acurácia (testado empiricamente). BioRED [2] (600 abstracts anotados por especialistas do NCBI, Luo et al. 2022) + TBGA [3] (200K+ pares gene-doença do DisGeNET, Marchesin & Silvello 2022) fornecem dados de qualidade muito superior. A abordagem de combinar datasets heterogêneos segue o framework BioREx [9] do NCBI. Resultado: F1 de 0.73 (só BioRED) → 0.85 (BioRED + TBGA + augmentation).
 
 ### Por que GWAS Catalog como fonte separada?
 
-O GWAS Catalog fornece associações com **odds ratios reais** — evidência estatística quantitativa de estudos com milhares de participantes. É a fonte mais confiável que existe. Estas associações são importadas diretamente sem passar por NER ou classificação ML.
+O GWAS Catalog [4] (Sollis et al. 2023) fornece associações com **odds ratios reais** — evidência estatística quantitativa de estudos com milhares de participantes (significância genômica p < 5×10⁻⁸). É a fonte mais confiável que existe. Estas associações são importadas diretamente sem passar por NER ou classificação ML.
 
 ### Por que HunFlair2 e não spaCy?
 
-spaCy `en_ner_bc5cdr_md` extraía frases inteiras como nomes de doenças (56% dos dados inválidos). HunFlair2 produz spans corretos, tem confidence score por entidade, e reconhece Disease, Chemical, Gene/Protein em um passo.
+spaCy `en_ner_bc5cdr_md` extraía frases inteiras como nomes de doenças (56% dos dados inválidos). HunFlair2 [5] (Sänger et al. 2024) alcançou o melhor F1-score médio em avaliação cross-corpus para NER biomédico, com modelos para genes/proteínas, químicos, doenças, espécies e linhagens celulares. Produz spans corretos, tem confidence score por entidade, e reconhece múltiplos tipos em um passo.
 
 ### Por que duas fases (NER → Classify) e não pipeline simultâneo?
 
@@ -482,7 +482,7 @@ Separar permite: (1) batch_size maior na classificação (128 vs 32), (2) libera
 
 ### Por que NER + BERT RE e não NLI?
 
-NLI classifica a **frase inteira** — se menciona 2 SNPs e 2 doenças, não sabe qual par está relacionado. BERT RE classifica **cada par** individualmente com entity markers (`@SNP@ ... #Disease#`). Mais preciso para abstracts que discutem múltiplas variantes.
+NLI classifica a **frase inteira** — se menciona 2 SNPs e 2 doenças, não sabe qual par está relacionado. BERT RE com entity markers (`@SNP@ ... #Disease#`) classifica **cada par** individualmente, seguindo a abordagem de Luo et al. [2] no BioRED. Mais preciso para abstracts que discutem múltiplas variantes.
 
 ---
 
@@ -629,3 +629,31 @@ Repositório separado: `vanda-f/`
 | Overlap GWAS↔IA | 134 pares |
 | Concordância | 50 pares (37%) |
 | F1-score modelo | 0.8465 |
+
+---
+
+## Referências
+
+[1] Gu, Y., Tinn, R., Cheng, H., Lucas, M., Usuyama, N., Liu, X., Naumann, T., Gao, J., & Poon, H. (2021). Domain-specific language model pretraining for biomedical natural language processing. *ACM Transactions on Computing for Healthcare*, 3(1), 1–23. https://doi.org/10.1145/3458754
+
+[2] Luo, L., Lai, P.-T., Wei, C.-H., Arighi, C. N., & Lu, Z. (2022). BioRED: A rich biomedical relation extraction dataset. *Briefings in Bioinformatics*, 23(5), bbac282. https://doi.org/10.1093/bib/bbac282
+
+[3] Marchesin, S., & Silvello, G. (2022). TBGA: A large-scale gene-disease association dataset for biomedical relation extraction. *BMC Bioinformatics*, 23, 111. https://doi.org/10.1186/s12859-022-04646-6
+
+[4] Sollis, E., Mosaku, A., Abid, A., Buniello, A., Cerezo, M., Gil, L., ... & Harris, L. W. (2023). NHGRI-EBI GWAS Catalog: knowledgebase and deposition resource. *Nucleic Acids Research*, 51(D1), D977–D985. https://doi.org/10.1093/nar/gkac1010
+
+[5] Sänger, M., Garda, S., Wang, X. D., Weber-Genzel, L., Droop, P., Fuchs, B., Akbik, A., & Leser, U. (2024). HunFlair2 in a cross-corpus evaluation of biomedical named entity recognition and normalization tools. *Bioinformatics*, 40(10), btae564. https://doi.org/10.1093/bioinformatics/btae564
+
+[6] Karczewski, K. J., Francioli, L. C., Tiao, G., Cummings, B. B., Alföldi, J., Wang, Q., ... & MacArthur, D. G. (2020). The mutational constraint spectrum quantified from variation in 141,456 humans. *Nature*, 581, 434–443. https://doi.org/10.1038/s41586-020-2308-7
+
+[7] FooDB — The Food Database. The Metabolomics Innovation Centre (TMIC). https://foodb.ca/
+
+[8] Lee, J., Yoon, W., Kim, S., Kim, D., Kim, S., So, C. H., & Kang, J. (2020). BioBERT: a pre-trained biomedical language representation model for biomedical text mining. *Bioinformatics*, 36(4), 1234–1240. https://doi.org/10.1093/bioinformatics/btz682
+
+[9] Lai, P.-T., Wei, C.-H., Luo, L., & Lu, Z. (2023). BioREx: Improving biomedical relation extraction by leveraging heterogeneous datasets. *Journal of Biomedical Informatics*, 146, 104487. https://doi.org/10.1016/j.jbi.2023.104487
+
+[10] Sherry, S. T., Ward, M. H., Kholodov, M., Baker, J., Phan, L., Smigielski, E. M., & Sirotkin, K. (2001). dbSNP: the NCBI database of genetic variation. *Nucleic Acids Research*, 29(1), 308–311. https://doi.org/10.1093/nar/29.1.308
+
+[11] Landrum, M. J., Lee, J. M., Benson, M., Brown, G. R., Chao, C., Chitipiralla, S., ... & Maglott, D. R. (2018). ClinVar: improving access to variant interpretations and supporting evidence. *Nucleic Acids Research*, 46(D1), D1062–D1067. https://doi.org/10.1093/nar/gkx1153
+
+[12] Zhang, J., Yu, Y., Li, Y., Wang, Y., Yang, H., Li, M., & Zhang, L. (2022). A survey on programmatic weak supervision. *arXiv preprint arXiv:2202.05433*. https://doi.org/10.48550/arXiv.2202.05433
